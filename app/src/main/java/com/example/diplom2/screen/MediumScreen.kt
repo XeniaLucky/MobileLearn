@@ -94,7 +94,6 @@ data class FaqItem1(val question: String, val answer: String)
 data class LessonProgress(val title: String, var completed: Boolean = false, var currentPage: Int = 0, val totalPages: Int = 3)
 data class Achievement(val title: String, val description: String, val icon: String, val isUnlocked: () -> Boolean)
 
-// Функция сохранения прогресса (не composable)
 fun saveLessonProgress(context: Context, userId: Long, lessonKey: String, completed: Boolean) {
     val prefs = context.getSharedPreferences("progress_medium_$userId", Context.MODE_PRIVATE)
     prefs.edit().putBoolean("${lessonKey}_completed", completed).apply()
