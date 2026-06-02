@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -31,7 +32,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import bd.AppDatabase
-import coil.compose.AsyncImage
+import coil.compose.rememberAsyncImagePainter
 import com.example.diplom2.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -48,7 +49,9 @@ fun UniversalProfileScreen(
     userId: Long,
     levelPrefix: String,
     accentColor: Color,
-    onLogout: () -> Unit  // Добавляем колбэк для выхода
+    onLogout: () -> Unit,
+    userName: String = "",
+    userEmail: String = ""
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -157,7 +160,9 @@ fun UniversalProfileScreen(
     val currentUser = user!!
     val displayName = currentUser.name
     val displayEmail = currentUser.email
-    val avatarPath = currentUser.avatarPath
+    val avatarUri = currentUser.avatarPath?.let { Uri.parse(it) }
+
+    val levelDisplay = levelPrefix.replace("_", "").replaceFirstChar { it.uppercase() }
 
     Column(
         modifier = Modifier
@@ -166,10 +171,11 @@ fun UniversalProfileScreen(
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // Аватар
         Box(modifier = Modifier.size(100.dp).clickable { pickImage() }) {
-            if (avatarPath != null) {
-                AsyncImage(
-                    model = File(avatarPath),
+            if (avatarUri != null) {
+                Image(
+                    painter = rememberAsyncImagePainter(avatarUri),
                     contentDescription = "Аватар",
                     modifier = Modifier.size(100.dp).clip(CircleShape),
                     contentScale = ContentScale.Crop
@@ -201,13 +207,14 @@ fun UniversalProfileScreen(
         Spacer(modifier = Modifier.height(16.dp))
         Text(displayName, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color(0xFF212121))
         Text(
-            "Уровень ${levelPrefix.replace("_", "").capitalize()}",
+            "Уровень $levelDisplay",
             fontSize = 16.sp,
             color = accentColor,
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(24.dp))
 
+        // Статистика
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
@@ -231,6 +238,7 @@ fun UniversalProfileScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        // Семейный тариф
         Card(
             modifier = Modifier.fillMaxWidth().clickable { navController.navigate("family_plan") },
             shape = RoundedCornerShape(16.dp),
@@ -257,6 +265,7 @@ fun UniversalProfileScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Кнопка редактирования
         OutlinedButton(
             onClick = {
                 editName = displayName
@@ -273,17 +282,19 @@ fun UniversalProfileScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        // Кнопка выхода
         OutlinedButton(
             onClick = { showLogoutDialog = true },
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFD32F2F))
         ) {
-            Icon(Icons.Default.Logout, contentDescription = null, modifier = Modifier.size(18.dp))
+            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(modifier = Modifier.width(8.dp))
             Text("Выйти из аккаунта", fontSize = 16.sp, color = Color(0xFFD32F2F))
         }
     }
 
+    // Диалог редактирования
     if (showEditDialog) {
         AlertDialog(
             onDismissRequest = { showEditDialog = false },
@@ -331,6 +342,7 @@ fun UniversalProfileScreen(
         )
     }
 
+    // Диалог выхода
     if (showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
@@ -339,8 +351,8 @@ fun UniversalProfileScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        showLogoutDialog = false
                         onLogout()
+                        showLogoutDialog = false
                     }
                 ) {
                     Text("Выйти")

@@ -31,7 +31,7 @@ fun AuthScreen(onLoginSuccess: (Long) -> Unit) {
     LaunchedEffect(Unit) {
         scope.launch {
             if (userRepo.login("test@test.com", "123") == null) {
-                userRepo.register("test@test.com", "123", "Тестовый", 1)
+                userRepo.register("test@test.com", "123", "Тестовый", 0)
             }
         }
     }
@@ -132,7 +132,7 @@ fun AuthScreen(onLoginSuccess: (Long) -> Unit) {
                             }
                         } else {
                             if (email.isNotBlank() && password.isNotBlank() && name.isNotBlank()) {
-                                val userId = userRepo.register(email, password, name, 1)
+                                val userId = userRepo.register(email, password, name, 0)
                                 if (userId != -1L) {
                                     onLoginSuccess(userId)
                                 } else {

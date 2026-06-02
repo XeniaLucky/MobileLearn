@@ -224,7 +224,7 @@ fun MediumHomeScreen(userId: Long, accentColor: Color, navController: NavControl
     ) {
         // Приветствие
         Text("Добро пожаловать!", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C2F3F))
-        Text("Твоя серия: 🔥5 дней", fontSize = 16.sp, color = Color(0xFF1C2F3F).copy(0.7f), modifier = Modifier.padding(bottom = 24.dp))
+        Text("Твоя серия: 🔥0 дней", fontSize = 16.sp, color = Color(0xFF1C2F3F).copy(0.7f), modifier = Modifier.padding(bottom = 24.dp))
 
         // Карточка «Активный курс»
         Card(

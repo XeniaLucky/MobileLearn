@@ -63,7 +63,7 @@ fun TutorialOverlay(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LightScreen(userId: Long, onLogout: () -> Unit) {
+fun LightScreen(userId: Long, onLogout: () -> Unit) {   // добавлен параметр
     val context = LocalContext.current
     val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
     val navController = rememberNavController()

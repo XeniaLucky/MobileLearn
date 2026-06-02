@@ -50,24 +50,36 @@ fun SmartphoneLearningApp() {
     var userId by remember { mutableStateOf(prefs.getLong("userId", -1)) }
     var showOnboarding by remember { mutableStateOf(!prefs.getBoolean("onboarding_completed", false)) }
     var selectedLevel by remember { mutableStateOf<String?>(null) }
+    var isLoadingLevel by remember { mutableStateOf(true) }
     val scope = rememberCoroutineScope()
+    val db = AppDatabase.getInstance(context)
+    val userRepo = UserRepository(db.userDao())
 
-    // Загрузка уровня пользователя из БД при входе
+    // Функция выхода
+    fun logout() {
+        prefs.edit().remove("userId").apply()
+        userId = -1L
+        isLoggedIn = false
+        selectedLevel = null
+    }
+
+    // Загрузка уровня пользователя из БД
     LaunchedEffect(userId) {
         if (userId != -1L) {
-            val db = AppDatabase.getInstance(context)
-            val userRepo = UserRepository(db.userDao())
+            isLoadingLevel = true
             val user = withContext(Dispatchers.IO) {
                 userRepo.getUser(userId)
             }
-            user?.let {
-                selectedLevel = when (it.levelId) {
-                    1 -> "beginner"
-                    2 -> "intermediate"
-                    3 -> "expert"
-                    else -> null
-                }
+            // Если уровень не задан (0 или null), оставляем selectedLevel = null, чтобы показать выбор
+            selectedLevel = when (user?.levelId) {
+                1 -> "beginner"
+                2 -> "intermediate"
+                3 -> "expert"
+                else -> null
             }
+            isLoadingLevel = false
+        } else {
+            isLoadingLevel = false
         }
     }
 
@@ -77,22 +89,6 @@ fun SmartphoneLearningApp() {
             prefs.edit().putLong("userId", id).apply()
             isLoggedIn = true
             showOnboarding = !prefs.getBoolean("onboarding_completed", false)
-            // После входа загрузим уровень
-            scope.launch {
-                val db = AppDatabase.getInstance(context)
-                val userRepo = UserRepository(db.userDao())
-                val user = withContext(Dispatchers.IO) {
-                    userRepo.getUser(id)
-                }
-                user?.let {
-                    selectedLevel = when (it.levelId) {
-                        1 -> "beginner"
-                        2 -> "intermediate"
-                        3 -> "expert"
-                        else -> null
-                    }
-                }
-            }
         })
         return
     }
@@ -105,197 +101,97 @@ fun SmartphoneLearningApp() {
         return
     }
 
-    if (selectedLevel == null) {
-        UserLevelSelectionScreen(onLevelSelected = { level ->
-            selectedLevel = level
-            // Сохраняем уровень пользователя в БД
-            if (userId != -1L) {
+    // Если уровень ещё не выбран (первый вход или levelId = 0)
+    if (selectedLevel == null && !isLoadingLevel) {
+        UserLevelSelectionScreen(
+            onLevelSelected = { level ->
+                selectedLevel = level
+                // Сохраняем уровень в БД
                 scope.launch {
-                    val db = AppDatabase.getInstance(context)
-                    val userRepo = UserRepository(db.userDao())
-                    val user = withContext(Dispatchers.IO) {
-                        userRepo.getUser(userId)
-                    }
-                    user?.let {
-                        val newLevel = when (level) {
-                            "beginner" -> 1
-                            "intermediate" -> 2
-                            "expert" -> 3
-                            else -> 1
+                    val userIdLocal = userId
+                    if (userIdLocal != -1L) {
+                        val user = withContext(Dispatchers.IO) {
+                            userRepo.getUser(userIdLocal)
                         }
-                        val updatedUser = it.copy(levelId = newLevel)
-                        withContext(Dispatchers.IO) {
-                            userRepo.updateUser(updatedUser)
+                        user?.let {
+                            val newLevelId = when (level) {
+                                "beginner" -> 1
+                                "intermediate" -> 2
+                                "expert" -> 3
+                                else -> 1
+                            }
+                            val updatedUser = it.copy(levelId = newLevelId)
+                            withContext(Dispatchers.IO) {
+                                userRepo.updateUser(updatedUser)
+                            }
                         }
                     }
                 }
             }
-        })
+        )
         return
     }
 
-    // Функция выхода из аккаунта
-    fun handleLogout() {
-        prefs.edit().remove("userId").apply()
-        prefs.edit().putBoolean("onboarding_completed", false).apply()
-        isLoggedIn = false
-        userId = -1
-        selectedLevel = null
-        showOnboarding = true
+    if (isLoadingLevel) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
     }
 
     when (selectedLevel) {
-        "beginner" -> {
-            val navController = androidx.navigation.compose.rememberNavController()
-            LightScreen(userId = userId, onLogout = { handleLogout() })
-        }
-        "intermediate" -> {
-            MediumScreen(userId = userId, onLogout = { handleLogout() })
-        }
-        "expert" -> {
-            ExpertScreen(userId = userId, onLogout = { handleLogout() })
+        "beginner" -> LightScreen(userId = userId, onLogout = { logout() })
+        "intermediate" -> MediumScreen(userId = userId, onLogout = { logout() })
+        "expert" -> ExpertScreen(userId = userId, onLogout = { logout() })
+        else -> {
+            selectedLevel = null
         }
     }
 }
 
-// Остальные функции (OnboardingScreen, UserLevelSelectionScreen, LevelOption) остаются без изменений
 // ---------- ОНБОРДИНГ ----------
 @Composable
 fun OnboardingScreen(onFinish: () -> Unit) {
     val pages = listOf(
-        OnboardingPageData(
-            title = "<Привет, пользователь...>",
-            description = "Научим пользоваться смартфоном легко и без стресса.",
-            imageRes = null
-        ),
-        OnboardingPageData(
-            title = "Простые уроки",
-            description = "От звонков до приложений – всё по шагам с картинками.",
-            imageRes = R.drawable.start_2
-        ),
-        OnboardingPageData(
-            title = "Ваш темп",
-            description = "Занимайтесь в удобное время, повторяйте сколько нужно.",
-            imageRes = R.drawable.start_3
-        )
+        OnboardingPageData("<Привет, пользователь...>", "Научим пользоваться смартфоном легко и без стресса.", null),
+        OnboardingPageData("Простые уроки", "От звонков до приложений – всё по шагам с картинками.", R.drawable.start_2),
+        OnboardingPageData("Ваш темп", "Занимайтесь в удобное время, повторяйте сколько нужно.", R.drawable.start_3)
     )
-
     var currentPage by remember { mutableIntStateOf(0) }
-
-    fun goNext() {
-        if (currentPage < pages.size - 1) currentPage++
-        else onFinish()
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Transparent)
-    ) {
+    fun goNext() { if (currentPage < pages.size - 1) currentPage++ else onFinish() }
+    Column(modifier = Modifier.fillMaxSize().background(Color.Transparent)) {
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(12.dp)
-                    .paint(
-                        painterResource(id=R.drawable.fon_start),
-                        contentScale = ContentScale.FillBounds)
-
-
+                modifier = Modifier.fillMaxSize().padding(12.dp).paint(painterResource(id = R.drawable.fon_start), contentScale = ContentScale.FillBounds)
             ) {
                 val page = pages[currentPage]
                 if (page.imageRes != null) {
-                    Image(
-                        painter = painterResource(id = page.imageRes),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(200.dp)
-                            .clip(CircleShape),
-                        contentScale = ContentScale.Crop
-                    )
+                    Image(painter = painterResource(id = page.imageRes), contentDescription = null, modifier = Modifier.size(200.dp).clip(CircleShape), contentScale = ContentScale.Crop)
                     Spacer(modifier = Modifier.height(32.dp))
                 }
-
-                Text(
-                    text = page.title,
-                    fontSize = if (currentPage == 0) 36.sp else 28.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Text(text = page.title, fontSize = if (currentPage == 0) 36.sp else 28.sp, fontWeight = FontWeight.Bold, color = Color.White, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
                 Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = page.description,
-                    fontSize = 18.sp,
-                    color = Color.White.copy(alpha = 0.9f),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                )
+                Text(text = page.description, fontSize = 18.sp, color = Color.White.copy(alpha = 0.9f), textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp))
             }
         }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center
-        ) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
             repeat(pages.size) { index ->
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .padding(horizontal = 4.dp)
-                        .background(
-                            color = if (currentPage == index) Color(0xFF4CAF50) else Color.White.copy(alpha = 0.7f),
-                            shape = CircleShape
-                        )
-                )
+                Box(modifier = Modifier.size(8.dp).padding(horizontal = 4.dp).background(color = if (currentPage == index) Color(0xFF4CAF50) else Color.White.copy(alpha = 0.7f), shape = CircleShape))
             }
         }
-
-        Button(
-            onClick = { goNext() },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 32.dp, vertical = 8.dp)
-                .height(52.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFCD9E75)),
-            shape = RoundedCornerShape(26.dp)
-        ) {
-            Text(
-                text = if (currentPage < pages.size - 1) "Далее" else "Начать",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF1C323F)
-            )
+        Button(onClick = { goNext() }, modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 8.dp).height(52.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFCD9E75)), shape = RoundedCornerShape(26.dp)) {
+            Text(text = if (currentPage < pages.size - 1) "Далее" else "Начать", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C323F))
         }
-
-        TextButton(
-            onClick = onFinish,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 32.dp, vertical = 4.dp)
-                .height(48.dp)
-        ) {
-            Text(
-                text = "Пропустить",
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Normal
-            )
+        TextButton(onClick = onFinish, modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 4.dp).height(48.dp)) {
+            Text(text = "Пропустить", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Normal)
         }
         Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
-data class OnboardingPageData(
-    val title: String,
-    val description: String,
-    val imageRes: Int? = null
-)
+data class OnboardingPageData(val title: String, val description: String, val imageRes: Int?)
 
 // ---------- ВЫБОР УРОВНЯ ----------
 @Composable
