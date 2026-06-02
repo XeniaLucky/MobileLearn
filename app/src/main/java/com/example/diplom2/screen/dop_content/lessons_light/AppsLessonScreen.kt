@@ -133,14 +133,14 @@ fun AppsLessonScreen(navController: NavController, userId: Long) {
             )
 
             if (searchQuery.equals("Учитель", ignoreCase = true)) {
-                Text("✅ Отлично! Приложение найдено.", color = Color.Green)
+                Text("✅ Отлично! Приложение найдено.", color = Color(0xFF2E8058))
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
                     onClick = { score += 15; step = 2 },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B5A2B))
                 ) { Text("Далее", color = Color.White) }
             } else {
-                Text("❌ Введите слово «Учитель» в поле поиска", color = Color.Red)
+                Text("❌ Введите слово «Учитель» в поле поиска", color = Color( 0xFF9B0C3F))
             }
             Text("Очки: $score", fontSize = 14.sp, color = Color(0xFF8B5A2B))
             Spacer(modifier = Modifier.height(16.dp))
@@ -174,14 +174,14 @@ fun AppsLessonScreen(navController: NavController, userId: Long) {
             }
 
             if (installConfirmed) {
-                Text("✅ Приложение установлено! Теперь его можно открыть.", color = Color.Green)
+                Text("✅ Приложение установлено! Теперь его можно открыть.", color = Color(0xFF2E8058))
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
                     onClick = { score += 20; step = 3 },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B5A2B))
                 ) { Text("Далее", color = Color.White) }
             } else {
-                Text("❌ Подтвердите, что вы установили приложение", color = Color.Red)
+                Text("❌ Подтвердите, что вы установили приложение", color = Color( 0xFF9B0C3F))
             }
             Text("Очки: $score", fontSize = 14.sp, color = Color(0xFF8B5A2B))
             Spacer(modifier = Modifier.height(16.dp))
@@ -215,14 +215,14 @@ fun AppsLessonScreen(navController: NavController, userId: Long) {
             }
 
             if (appOpened) {
-                Text("✅ Приложение успешно открыто!", color = Color.Green)
+                Text("✅ Приложение успешно открыто!", color = Color(0xFF2E8058))
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
                     onClick = { score += 15; step = 4 },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B5A2B))
                 ) { Text("Далее", color = Color.White) }
             } else {
-                Text("❌ Откройте приложение, чтобы продолжить", color = Color.Red)
+                Text("❌ Откройте приложение, чтобы продолжить", color = Color( 0xFF9B0C3F))
             }
             Text("Очки: $score", fontSize = 14.sp, color = Color(0xFF8B5A2B))
             Spacer(modifier = Modifier.height(16.dp))
@@ -256,14 +256,14 @@ fun AppsLessonScreen(navController: NavController, userId: Long) {
             }
 
             if (appDeleted) {
-                Text("✅ Приложение удалено! Теперь экран стал чище.", color = Color.Green)
+                Text("✅ Приложение удалено! Теперь экран стал чище.", color = Color(0xFF2E8058))
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
                     onClick = { score += 25; step = 5 },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B5A2B))
                 ) { Text("Завершить", color = Color.White) }
             } else {
-                Text("❌ Удалите приложение, чтобы продолжить", color = Color.Red)
+                Text("❌ Удалите приложение, чтобы продолжить", color = Color( 0xFF9B0C3F))
             }
             Text("Очки: $score", fontSize = 14.sp, color = Color(0xFF8B5A2B))
             Spacer(modifier = Modifier.height(16.dp))

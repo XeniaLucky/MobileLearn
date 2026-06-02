@@ -224,7 +224,7 @@ fun LessonAdbScreen(navController: NavController, userId: Long) {
             }
             if (adbInstalled) {
                 item {
-                    Text("✅ Отлично! Переходим к следующему шагу.", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Отлично! Переходим к следующему шагу.", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -237,7 +237,7 @@ fun LessonAdbScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите, что вы установили ADB", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите, что вы установили ADB", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -309,7 +309,7 @@ fun LessonAdbScreen(navController: NavController, userId: Long) {
             }
             if (usbDebugging) {
                 item {
-                    Text("✅ Отлично! Теперь телефон готов к подключению.", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Отлично! Теперь телефон готов к подключению.", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -322,7 +322,7 @@ fun LessonAdbScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите, что вы включили отладку по USB", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите, что вы включили отладку по USB", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -398,7 +398,7 @@ fun LessonAdbScreen(navController: NavController, userId: Long) {
             }
             if (deviceConnected) {
                 item {
-                    Text("✅ Супер! Теперь можно выполнять команды.", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Супер! Теперь можно выполнять команды.", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -411,7 +411,7 @@ fun LessonAdbScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите, что телефон подключён", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите, что телефон подключён", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -488,7 +488,7 @@ fun LessonAdbScreen(navController: NavController, userId: Long) {
             }
             if (commandExecuted) {
                 item {
-                    Text("✅ Поздравляю! Вы освоили основы ADB!", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Поздравляю! Вы освоили основы ADB!", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -501,7 +501,7 @@ fun LessonAdbScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Выполните команду adb devices и подтвердите", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Выполните команду adb devices и подтвердите", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {

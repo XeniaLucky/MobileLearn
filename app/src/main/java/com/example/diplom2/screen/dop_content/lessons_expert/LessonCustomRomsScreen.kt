@@ -255,7 +255,7 @@ fun LessonCustomRomsScreen(navController: NavController, userId: Long) {
             }
             if (backupDone) {
                 item {
-                    Text("✅ Отлично! Данные сохранены, можно приступать.", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Отлично! Данные сохранены, можно приступать.", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -268,7 +268,7 @@ fun LessonCustomRomsScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите, что вы скачали прошивку и сделали бэкап", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите, что вы скачали прошивку и сделали бэкап", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -354,7 +354,7 @@ fun LessonCustomRomsScreen(navController: NavController, userId: Long) {
             }
             if (wipeDone) {
                 item {
-                    Text("✅ Готово! Теперь можно устанавливать прошивку.", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Готово! Теперь можно устанавливать прошивку.", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -367,7 +367,7 @@ fun LessonCustomRomsScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите, что вы выполнили Wipe", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите, что вы выполнили Wipe", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -457,7 +457,7 @@ fun LessonCustomRomsScreen(navController: NavController, userId: Long) {
             }
             if (customRomSelected) {
                 item {
-                    Text("✅ ROM установлен! Переходим к следующему шагу.", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ ROM установлен! Переходим к следующему шагу.", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -470,7 +470,7 @@ fun LessonCustomRomsScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите, что вы установили ROM", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите, что вы установили ROM", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -576,7 +576,7 @@ fun LessonCustomRomsScreen(navController: NavController, userId: Long) {
             }
             if (gappsInstalled) {
                 item {
-                    Text("✅ GApps установлены!", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ GApps установлены!", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -589,7 +589,7 @@ fun LessonCustomRomsScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите, что вы установили GApps (или они не нужны)", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите, что вы установили GApps (или они не нужны)", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -691,7 +691,7 @@ fun LessonCustomRomsScreen(navController: NavController, userId: Long) {
             }
             if (romInstalled) {
                 item {
-                    Text("✅ Поздравляю! Вы успешно установили кастомную прошивку!", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Поздравляю! Вы успешно установили кастомную прошивку!", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -704,7 +704,7 @@ fun LessonCustomRomsScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите, что телефон загрузился с новой прошивкой", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите, что телефон загрузился с новой прошивкой", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {

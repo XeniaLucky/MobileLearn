@@ -216,7 +216,7 @@ fun LessonLoggingScreen(navController: NavController, userId: Long) {
             }
             if (adbLoggingChecked) {
                 item {
-                    Text("✅ Отлично! Теперь можно смотреть логи.", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Отлично! Теперь можно смотреть логи.", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -229,7 +229,7 @@ fun LessonLoggingScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите настройку ADB", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите настройку ADB", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -333,7 +333,7 @@ fun LessonLoggingScreen(navController: NavController, userId: Long) {
             }
             if (logcatCommand) {
                 item {
-                    Text("✅ Logcat освоен!", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Logcat освоен!", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -346,7 +346,7 @@ fun LessonLoggingScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите изучение фильтрации", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите изучение фильтрации", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -467,7 +467,7 @@ fun LessonLoggingScreen(navController: NavController, userId: Long) {
             }
             if (filterLearned) {
                 item {
-                    Text("✅ Анализ логов освоен!", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Анализ логов освоен!", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -480,7 +480,7 @@ fun LessonLoggingScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите, что вы изучили анализ логов", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите, что вы изучили анализ логов", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -592,7 +592,7 @@ fun LessonLoggingScreen(navController: NavController, userId: Long) {
             }
             if (logReading) {
                 item {
-                    Text("✅ Работа с логами освоена на уровне эксперта!", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Работа с логами освоена на уровне эксперта!", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -605,7 +605,7 @@ fun LessonLoggingScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите, что вы изучили расширенные логи", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите, что вы изучили расширенные логи", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {

@@ -33,11 +33,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import bd.AppDatabase
 import kotlinx.coroutines.launch
 import repository.GameRepository
@@ -45,6 +43,7 @@ import table.Game
 import androidx.compose.runtime.rememberCoroutineScope
 import com.example.diplom2.R
 import com.example.diplom2.screen.dop_content.*
+import com.example.diplom2.screen.dop_content.gameMedium.GameTransferScreen
 import com.example.diplom2.screen.dop_content.lessons_medium.*
 
 // Активный урок (Medium)
@@ -103,7 +102,7 @@ fun saveLessonProgress(context: Context, userId: Long, lessonKey: String, comple
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MediumScreen(userId: Long) {
+fun MediumScreen(userId: Long, onLogout: () -> Unit) {
     val navController = rememberNavController()
     val backgroundColor = Color(0xFFC4D7DB)
     val accentColor = Color(0xFF2C5F6E)
@@ -118,49 +117,25 @@ fun MediumScreen(userId: Long) {
                     icon = { Icon(Icons.Default.School, contentDescription = "Курсы") },
                     label = { Text("Курсы") },
                     selected = navController.currentDestination?.route == "home",
-                    onClick = { navController.navigate("home") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = accentColor,
-                        selectedTextColor = accentColor,
-                        unselectedIconColor = Color.Gray,
-                        unselectedTextColor = Color.Gray
-                    )
+                    onClick = { navController.navigate("home") }
                 )
                 NavigationBarItem(
                     icon = { Icon(Icons.Default.Games, contentDescription = "Игры") },
                     label = { Text("Игры") },
                     selected = navController.currentDestination?.route == "games",
-                    onClick = { navController.navigate("games") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = accentColor,
-                        selectedTextColor = accentColor,
-                        unselectedIconColor = Color.Gray,
-                        unselectedTextColor = Color.Gray
-                    )
+                    onClick = { navController.navigate("games") }
                 )
                 NavigationBarItem(
                     icon = { Icon(Icons.Default.EmojiEvents, contentDescription = "Награды") },
                     label = { Text("Награды") },
                     selected = navController.currentDestination?.route == "rewards",
-                    onClick = { navController.navigate("rewards") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = accentColor,
-                        selectedTextColor = accentColor,
-                        unselectedIconColor = Color.Gray,
-                        unselectedTextColor = Color.Gray
-                    )
+                    onClick = { navController.navigate("rewards") }
                 )
                 NavigationBarItem(
                     icon = { Icon(Icons.Default.Person, contentDescription = "Профиль") },
                     label = { Text("Профиль") },
                     selected = navController.currentDestination?.route == "profile",
-                    onClick = { navController.navigate("profile") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = accentColor,
-                        selectedTextColor = accentColor,
-                        unselectedIconColor = Color.Gray,
-                        unselectedTextColor = Color.Gray
-                    )
+                    onClick = { navController.navigate("profile") }
                 )
             }
         },
@@ -181,50 +156,43 @@ fun MediumScreen(userId: Long) {
                     MediumRewardsScreen(accentColor = accentColor, userId = userId)
                 }
                 composable("profile") {
-                    MediumProfileScreen(userId = userId, accentColor = accentColor)
+                    UniversalProfileScreen(
+                        navController = navController,
+                        userId = userId,
+                        levelPrefix = "medium_",
+                        accentColor = accentColor,
+                        onLogout = onLogout
+                    )
                 }
                 composable("family_plan") {
                     MediumFamilyPlanScreen(userId = userId, accentColor = accentColor)
                 }
                 // Бесплатные игры
-                composable("game_taprun") {
-                    TapRunGame(navController = navController, onBack = { navController.popBackStack() })
-                }
-                composable("game_swipequiz") {
-                    SwipeQuizGame(navController = navController, onBack = { navController.popBackStack() })
-                }
-                composable("game_settingspuzzle") {
-                    SettingsPuzzleGame(navController = navController, onBack = { navController.popBackStack() })
-                }
+                composable("game_transfer") { GameTransferScreen(navController = navController) }
+                composable("game_swipequiz") { SwipeQuizGame(navController = navController, onBack = { navController.popBackStack() }) }
+                composable("game_settingspuzzle") { SettingsPuzzleGame(navController = navController, onBack = { navController.popBackStack() }) }
                 // Платные игры
-                composable("premium_game_pro_photographer") {
-                    ProPhotographerGame(navController = navController, onBack = { navController.popBackStack() })
-                }
-                composable("premium_game_cyber_detective") {
-                    CyberDetectiveGame(navController = navController, onBack = { navController.popBackStack() })
-                }
-                composable("premium_game_gestures") {
-                    GesturesGame(navController = navController, onBack = { navController.popBackStack() })
-                }
-                // НОВЫЕ УРОКИ (6 основных)
+                composable("premium_game_pro_photographer") { ProPhotographerGame(navController = navController, onBack = { navController.popBackStack() }) }
+                composable("premium_game_cyber_detective") { CyberDetectiveGame(navController = navController, onBack = { navController.popBackStack() }) }
+                composable("premium_game_gestures") { GesturesGame(navController = navController, onBack = { navController.popBackStack() }) }
+                // Уроки
                 composable("game_notifications") { LessonNotificationsScreen(navController, userId) }
                 composable("game_memory") { LessonMemoryCleanScreen(navController, userId) }
                 composable("game_battery") { LessonBatterySaverScreen(navController, userId) }
                 composable("game_safeapps") { LessonSafeAppsScreen(navController, userId) }
                 composable("game_datatransfer") { LessonDataTransferScreen(navController, userId) }
                 composable("game_recovery") { LessonPasswordRecoveryScreen(navController, userId) }
-                // Дополнительные уроки (для кнопки "Ещё уроки")
                 composable("game_wifidiag") { LessonWifiDiagnosticScreen(navController, userId) }
                 composable("game_digitalwellbeing") { LessonDigitalWellbeingScreen(navController, userId) }
-                // Экран "Ещё уроки" (список дополнительных)
                 composable("extra_lessons") { ExtraLessonsScreen(navController, userId, accentColor) }
-                // Экран FAQ
                 composable("faq") { FaqScreen(navController, accentColor) }
             }
         }
     }
 }
 
+// Остальные функции (MediumHomeScreen, MediumGamesScreen, MediumRewardsScreen, ExtraLessonsScreen, FaqScreen, MediumFamilyPlanScreen, MediumFamilyPlanFeature, getGameIcon, StatisticCard и т.д.) остаются без изменений.
+// Для краткости они не дублируются, но должны быть скопированы из предыдущей версии.
 // ---------- ГЛАВНЫЙ ЭКРАН (6 новых уроков) ----------
 @Composable
 fun MediumHomeScreen(userId: Long, accentColor: Color, navController: NavController) {
@@ -338,7 +306,7 @@ fun MediumHomeScreen(userId: Long, accentColor: Color, navController: NavControl
                                 Text(
                                     if (isCompleted) "✅ Пройдено" else "Интерактивный урок",
                                     fontSize = 12.sp,
-                                    color = if (isCompleted) Color.Green else Color(0xFF757575),
+                                    color = if (isCompleted) Color(0xFF2E8058) else Color(0xFF757575),
                                     textAlign = TextAlign.Center
                                 )
                             }
@@ -473,7 +441,7 @@ fun FaqScreen(navController: NavController, accentColor: Color) {
     }
 }
 
-// ---------- ЭКРАН ИГР ----------
+// ---------- ЭКРАН ИГР (исправлен) ----------
 @Composable
 fun MediumGamesScreen(navController: NavController, userId: Long, accentColor: Color) {
     val context = LocalContext.current
@@ -488,7 +456,21 @@ fun MediumGamesScreen(navController: NavController, userId: Long, accentColor: C
         }
     }
 
-    val freeGames = games.filter { it.price == 0 }
+    val freeGames = games.filter { it.price == 0 }.toMutableList()
+    // Заменяем TapRun на TransferGamePro
+    val tapRunIndex = freeGames.indexOfFirst { it.gameKey == "tap_run" }
+    if (tapRunIndex != -1) {
+        val original = freeGames[tapRunIndex]
+        freeGames[tapRunIndex] = original.copy(
+            name = "Обменник PRO",
+            description = "Перетаскивайте файлы на устройства и выбирайте правильный способ передачи",
+            gameKey = "transfer_game",
+            price = 0,
+            isPremium = false,
+            iconResName = "transfer"
+        )
+    }
+
     val premiumGames = games.filter { it.price > 0 }
 
     LazyColumn(
@@ -544,7 +526,7 @@ fun MediumGamesScreen(navController: NavController, userId: Long, accentColor: C
                     Button(
                         onClick = {
                             when (game.gameKey) {
-                                "tap_run" -> navController.navigate("game_taprun")
+                                "transfer_game" -> navController.navigate("game_transfer")
                                 "swipe_quiz" -> navController.navigate("game_swipequiz")
                                 "settings_puzzle" -> navController.navigate("game_settingspuzzle")
                                 else -> {}
@@ -641,7 +623,7 @@ fun MediumGamesScreen(navController: NavController, userId: Long, accentColor: C
 @Composable
 fun getGameIcon(gameKey: String): ImageVector {
     return when (gameKey) {
-        "tap_run" -> Icons.Default.TouchApp
+        "transfer_game" -> Icons.Default.Sync
         "swipe_quiz" -> Icons.Default.Swipe
         "settings_puzzle" -> Icons.Default.Settings
         "pro_photographer" -> Icons.Default.Camera
@@ -698,7 +680,7 @@ fun MediumRewardsScreen(accentColor: Color, userId: Long) {
                         Text(achievement.description, fontSize = 12.sp, color = if (isUnlocked) Color.DarkGray else Color.Gray, textAlign = TextAlign.Center)
                         if (!isUnlocked) {
                             Spacer(modifier = Modifier.height(4.dp))
-                            Text("🔒 Не разблокировано", fontSize = 10.sp, color = Color.Red)
+                            Text("🔒 Не разблокировано", fontSize = 10.sp, color = Color( 0xFF9B0C3F))
                         }
                     }
                 }

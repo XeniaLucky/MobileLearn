@@ -135,14 +135,14 @@ fun WifiLessonScreen(navController: NavController, userId: Long) {
             }
 
             if (wifiEnabled) {
-                Text("✅ Wi-Fi включён! Теперь видно список сетей.", color = Color.Green)
+                Text("✅ Wi-Fi включён! Теперь видно список сетей.", color = Color(0xFF2E8058))
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
                     onClick = { score += 10; step = 2 },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B5A2B))
                 ) { Text("Далее", color = Color.White) }
             } else {
-                Text("❌ Включите Wi-Fi, чтобы продолжить", color = Color.Red)
+                Text("❌ Включите Wi-Fi, чтобы продолжить", color = Color( 0xFF9B0C3F))
             }
             Text("Очки: $score", fontSize = 14.sp, color = Color(0xFF8B5A2B))
             Spacer(modifier = Modifier.height(16.dp))
@@ -205,7 +205,7 @@ fun WifiLessonScreen(navController: NavController, userId: Long) {
             }
 
             if (errorMessage != null) {
-                Text(errorMessage!!, color = Color.Red, fontSize = 12.sp)
+                Text(errorMessage!!, color = Color( 0xFF9B0C3F), fontSize = 12.sp)
             }
             Text("Очки: $score", fontSize = 14.sp, color = Color(0xFF8B5A2B))
             Spacer(modifier = Modifier.height(16.dp))
@@ -249,7 +249,7 @@ fun WifiLessonScreen(navController: NavController, userId: Long) {
             }
 
             if (errorMessage != null) {
-                Text(errorMessage!!, color = Color.Red, fontSize = 12.sp)
+                Text(errorMessage!!, color = Color( 0xFF9B0C3F), fontSize = 12.sp)
             }
 
             Button(

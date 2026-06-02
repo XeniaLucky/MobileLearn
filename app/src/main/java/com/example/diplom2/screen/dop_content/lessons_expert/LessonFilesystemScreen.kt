@@ -223,7 +223,7 @@ fun LessonFilesystemScreen(navController: NavController, userId: Long) {
             }
             if (pathsLearned) {
                 item {
-                    Text("✅ Отлично! Продолжаем.", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Отлично! Продолжаем.", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -236,7 +236,7 @@ fun LessonFilesystemScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите изучение структуры", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите изучение структуры", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -346,7 +346,7 @@ fun LessonFilesystemScreen(navController: NavController, userId: Long) {
             }
             if (adbCommandsLearned) {
                 item {
-                    Text("✅ Отлично! ADB-команды освоены.", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Отлично! ADB-команды освоены.", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -359,7 +359,7 @@ fun LessonFilesystemScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите изучение команд ADB", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите изучение команд ADB", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -455,7 +455,7 @@ fun LessonFilesystemScreen(navController: NavController, userId: Long) {
             }
             if (explorerInstalled) {
                 item {
-                    Text("✅ Отлично! Вы освоили работу с файловой системой.", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Отлично! Вы освоили работу с файловой системой.", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -468,7 +468,7 @@ fun LessonFilesystemScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите выполнение заданий", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите выполнение заданий", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -564,7 +564,7 @@ fun LessonFilesystemScreen(navController: NavController, userId: Long) {
             }
             if (permissionsLearned) {
                 item {
-                    Text("✅ Поздравляю! Вы освоили файловую систему Android!", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Поздравляю! Вы освоили файловую систему Android!", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -577,7 +577,7 @@ fun LessonFilesystemScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите, что вы изучили права доступа", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите, что вы изучили права доступа", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {

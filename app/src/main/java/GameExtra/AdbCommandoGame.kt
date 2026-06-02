@@ -403,9 +403,9 @@ fun AdbCommandoGame(navController: NavController) {
                                         mission.difficulty,
                                         color = when (mission.difficulty) {
 
-                                            "Easy" -> Color.Green
+                                            "Easy" -> Color(0xFF2E8058)
                                             "Medium" -> Color.Yellow
-                                            "Hard" -> Color.Red
+                                            "Hard" -> Color( 0xFF9B0C3F)
                                             else -> Color.Cyan
                                         }
                                     )

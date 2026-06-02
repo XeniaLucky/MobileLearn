@@ -292,7 +292,7 @@ fun ContactsLessonScreen(navController: NavController, userId: Long) {
                     Text("🗑️ ШАГ 4: Удаление контакта", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(8.dp))
                     Text("Удалите контакт «$name». В реальной жизни нажмите на три точки → «Удалить».", fontSize = 14.sp)
-                    Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(48.dp), tint = Color.Red)
+                    Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(48.dp), tint = Color( 0xFF9B0C3F))
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
@@ -305,7 +305,7 @@ fun ContactsLessonScreen(navController: NavController, userId: Long) {
                         step = 5
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                    colors = ButtonDefaults.buttonColors(containerColor = Color( 0xFF9B0C3F))
                 ) { Text("Удалить контакт", color = Color.White) }
             }
 

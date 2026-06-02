@@ -229,7 +229,7 @@ fun LessonScriptsScreen(navController: NavController, userId: Long) {
             }
             if (taskerInstalled) {
                 item {
-                    Text("✅ Отлично! Переходим к созданию профилей.", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Отлично! Переходим к созданию профилей.", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -242,7 +242,7 @@ fun LessonScriptsScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите установку Tasker", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите установку Tasker", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -332,7 +332,7 @@ fun LessonScriptsScreen(navController: NavController, userId: Long) {
             }
             if (profileCreated) {
                 item {
-                    Text("✅ Отлично! Профиль готов.", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Отлично! Профиль готов.", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -345,7 +345,7 @@ fun LessonScriptsScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите, что вы создали профиль", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите, что вы создали профиль", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -443,7 +443,7 @@ fun LessonScriptsScreen(navController: NavController, userId: Long) {
             }
             if (taskCreated) {
                 item {
-                    Text("✅ Отлично! Задача создана.", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Отлично! Задача создана.", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -456,7 +456,7 @@ fun LessonScriptsScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите, что вы создали задачу", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите, что вы создали задачу", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -568,7 +568,7 @@ fun LessonScriptsScreen(navController: NavController, userId: Long) {
             }
             if (scriptWritten) {
                 item {
-                    Text("✅ Скрипт готов!", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Скрипт готов!", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -581,7 +581,7 @@ fun LessonScriptsScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите, что вы написали скрипт", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите, что вы написали скрипт", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -669,7 +669,7 @@ fun LessonScriptsScreen(navController: NavController, userId: Long) {
             }
             if (automationTested) {
                 item {
-                    Text("✅ Поздравляю! Вы освоили автоматизацию на Android!", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Поздравляю! Вы освоили автоматизацию на Android!", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -682,7 +682,7 @@ fun LessonScriptsScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите, что вы протестировали автоматизацию", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите, что вы протестировали автоматизацию", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {

@@ -232,7 +232,7 @@ fun LessonRootScreen(navController: NavController, userId: Long) {
             }
             if (bootloaderUnlocked) {
                 item {
-                    Text("✅ Отлично! Теперь можно переходить к установке TWRP.", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Отлично! Теперь можно переходить к установке TWRP.", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -245,7 +245,7 @@ fun LessonRootScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите, что вы ознакомились с инструкцией по разблокировке", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите, что вы ознакомились с инструкцией по разблокировке", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -330,7 +330,7 @@ fun LessonRootScreen(navController: NavController, userId: Long) {
             }
             if (twrpInstalled) {
                 item {
-                    Text("✅ Отлично! TWRP установлен. Теперь прошьём Magisk.", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Отлично! TWRP установлен. Теперь прошьём Magisk.", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -343,7 +343,7 @@ fun LessonRootScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите, что вы установили TWRP", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите, что вы установили TWRP", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -431,7 +431,7 @@ fun LessonRootScreen(navController: NavController, userId: Long) {
             }
             if (magiskInstalled) {
                 item {
-                    Text("✅ Magisk установлен! Теперь проверим root.", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Magisk установлен! Теперь проверим root.", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -444,7 +444,7 @@ fun LessonRootScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите, что вы установили Magisk", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите, что вы установили Magisk", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -537,7 +537,7 @@ fun LessonRootScreen(navController: NavController, userId: Long) {
             }
             if (rootVerified) {
                 item {
-                    Text("✅ Поздравляю! Вы успешно получили root-доступ!", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Поздравляю! Вы успешно получили root-доступ!", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -550,7 +550,7 @@ fun LessonRootScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите, что вы проверили root", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите, что вы проверили root", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {

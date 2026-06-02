@@ -13,5 +13,6 @@ data class User(
     val levelId: Int,   // 1-beginner, 2-intermediate, 3-expert
     val isPremium: Boolean = false,
     val familySubscriptionActive: Boolean = false,
-    val familySubscriptionExpiry: String? = null
+    val familySubscriptionExpiry: String? = null,
+    val avatarPath: String? = null
 )

@@ -212,7 +212,7 @@ fun LessonEmulationScreen(navController: NavController, userId: Long) {
             }
             if (vmosInstalled) {
                 item {
-                    Text("✅ Виртуальный Android готов к работе!", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Виртуальный Android готов к работе!", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -225,7 +225,7 @@ fun LessonEmulationScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите установку VMOS", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите установку VMOS", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -329,7 +329,7 @@ fun LessonEmulationScreen(navController: NavController, userId: Long) {
             }
             if (termuxProotSetup) {
                 item {
-                    Text("✅ Linux внутри Android готов к работе!", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Linux внутри Android готов к работе!", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -342,7 +342,7 @@ fun LessonEmulationScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите установку Linux", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите установку Linux", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -438,7 +438,7 @@ fun LessonEmulationScreen(navController: NavController, userId: Long) {
             }
             if (windowsEmulation) {
                 item {
-                    Text("✅ Эмуляция Windows освоена!", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Эмуляция Windows освоена!", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -451,7 +451,7 @@ fun LessonEmulationScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите, что вы изучили эмуляцию Windows", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите, что вы изучили эмуляцию Windows", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -549,7 +549,7 @@ fun LessonEmulationScreen(navController: NavController, userId: Long) {
             }
             if (linuxInstalled) {
                 item {
-                    Text("✅ Эмуляция игр освоена!", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Эмуляция игр освоена!", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -562,7 +562,7 @@ fun LessonEmulationScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите изучение", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите изучение", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {

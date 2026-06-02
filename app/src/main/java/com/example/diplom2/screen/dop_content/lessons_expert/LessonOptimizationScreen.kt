@@ -221,7 +221,7 @@ fun LessonOptimizationScreen(navController: NavController, userId: Long) {
             }
             if (debloatDone) {
                 item {
-                    Text("✅ Отлично! Телефон стал легче и быстрее.", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Отлично! Телефон стал легче и быстрее.", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -234,7 +234,7 @@ fun LessonOptimizationScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите, что вы удалили ненужные приложения", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите, что вы удалили ненужные приложения", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -329,7 +329,7 @@ fun LessonOptimizationScreen(navController: NavController, userId: Long) {
             }
             if (governorChanged) {
                 item {
-                    Text("✅ Отлично! Телефон работает с оптимальными настройками.", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Отлично! Телефон работает с оптимальными настройками.", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -342,7 +342,7 @@ fun LessonOptimizationScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите, что вы ознакомились с настройкой CPU", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите, что вы ознакомились с настройкой CPU", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -439,7 +439,7 @@ fun LessonOptimizationScreen(navController: NavController, userId: Long) {
             }
             if (buildPropOptimized) {
                 item {
-                    Text("✅ Отлично! Система настроена на максимальную производительность.", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Отлично! Система настроена на максимальную производительность.", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -452,7 +452,7 @@ fun LessonOptimizationScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите, что вы произвели настройку build.prop", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите, что вы произвели настройку build.prop", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -551,7 +551,7 @@ fun LessonOptimizationScreen(navController: NavController, userId: Long) {
             }
             if (lmkConfigured) {
                 item {
-                    Text("✅ Поздравляю! Вы настроили все параметры оптимизации!", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Поздравляю! Вы настроили все параметры оптимизации!", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -564,7 +564,7 @@ fun LessonOptimizationScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите, что вы настроили LMK", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите, что вы настроили LMK", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {

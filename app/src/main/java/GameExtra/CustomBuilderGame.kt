@@ -401,9 +401,9 @@ fun CustomBuilderGame(navController: NavController) {
                                 return if (
                                     part.compatibility.contains(selectedPhone)
                                 ) {
-                                    "Совместимо" to Color.Green
+                                    "Совместимо" to Color(0xFF2E8058)
                                 } else {
-                                    "Несовместимо" to Color.Red
+                                    "Несовместимо" to Color( 0xFF9B0C3F)
                                 }
                             }
 
@@ -587,9 +587,9 @@ fun CustomBuilderGame(navController: NavController) {
                                     Text(
                                         stabilityText,
                                         color = if (stars >= 4)
-                                            Color.Green
+                                            Color(0xFF2E8058)
                                         else
-                                            Color.Red,
+                                            Color( 0xFF9B0C3F),
                                         fontSize = 18.sp
                                     )
                                 }

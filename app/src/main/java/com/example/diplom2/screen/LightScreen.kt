@@ -1,13 +1,14 @@
 package com.example.diplom2.screen
 
+import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,31 +22,54 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import com.example.diplom2.R
 import com.example.diplom2.screen.dop_content.lessons_light.*
-import kotlin.coroutines.jvm.internal.CompletedContinuation.context
+
+@Composable
+fun TutorialOverlay(
+    steps: List<String>,
+    onFinish: () -> Unit
+) {
+    var currentStep by remember { mutableStateOf(0) }
+    Box(
+        modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.7f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(modifier = Modifier.padding(24.dp)) {
+            Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(text = steps[currentStep], fontSize = 20.sp)
+                Spacer(modifier = Modifier.height(20.dp))
+                Button(onClick = {
+                    if (currentStep < steps.lastIndex) currentStep++
+                    else onFinish()
+                }) {
+                    Text("Далее")
+                }
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LightScreen(userId: Long) {
+fun LightScreen(userId: Long, onLogout: () -> Unit) {
+    val context = LocalContext.current
+    val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
     val navController = rememberNavController()
     val backgroundColor = Color(0xFFEFE3D3)
-    var showTutorial by remember {
-        mutableStateOf(prefs.getBoolean("light_tutorial_done", false) == false)
-    }
+    var showTutorial by remember { mutableStateOf(!prefs.getBoolean("light_tutorial_done", false)) }
+
     if (showTutorial) {
         TutorialOverlay(
             steps = listOf(
@@ -60,6 +84,7 @@ fun LightScreen(userId: Long) {
             }
         )
     }
+
     Scaffold(
         bottomBar = {
             NavigationBar(
@@ -92,7 +117,15 @@ fun LightScreen(userId: Long) {
             NavHost(navController = navController, startDestination = "lessons") {
                 composable("lessons") { LessonsScreen(navController = navController, backgroundColor = backgroundColor) }
                 composable("guide") { GuideScreen(navController = navController, backgroundColor = backgroundColor) }
-                composable("profile") { ProfileScreen(navController = navController, backgroundColor = backgroundColor) }
+                composable("profile") {
+                    UniversalProfileScreen(
+                        navController = navController,
+                        userId = userId,
+                        levelPrefix = "light_",
+                        accentColor = Color(0xFF8B5A2B),
+                        onLogout = onLogout
+                    )
+                }
                 composable("family_plan") { FamilyPlanScreen(navController = navController, backgroundColor = backgroundColor) }
                 // Игровые уроки
                 composable("game_power") { PowerLessonScreen(navController = navController, userId = userId) }
@@ -108,7 +141,7 @@ fun LightScreen(userId: Long) {
     }
 }
 
-// ---------- ГЛАВНЫЙ ЭКРАН СО СПИСКОМ УРОКОВ (ИГР) ----------
+// ---------- ГЛАВНЫЙ ЭКРАН СО СПИСКОМ УРОКОВ ----------
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LessonsScreen(navController: NavController, backgroundColor: Color) {
@@ -192,55 +225,6 @@ fun GuideScreen(navController: NavController, backgroundColor: Color) {
 }
 
 data class FaqItem(val question: String, val answer: String)
-
-// ---------- ПРОФИЛЬ ----------
-@Composable
-fun ProfileScreen(navController: NavController, backgroundColor: Color) {
-    Column(modifier = Modifier.fillMaxSize().background(backgroundColor).padding(24.dp)) {
-        Box(modifier = Modifier.size(100.dp).align(Alignment.CenterHorizontally)) {
-            Image(painter = painterResource(id = R.drawable.avatarka_light), contentDescription = "Аватар", modifier = Modifier.size(100.dp).clip(CircleShape), contentScale = ContentScale.Crop)
-            Image(painter = painterResource(id = R.drawable.crown_light), contentDescription = "Корона", modifier = Modifier.size(70.dp).align(Alignment.TopCenter).offset(y = (-19).dp))
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-        Text("Анна Петровна", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color(0xFF212121), modifier = Modifier.align(Alignment.CenterHorizontally))
-        Text("Уровень 5", fontSize = 16.sp, color = Color(0xFF8B5A2B), fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.CenterHorizontally))
-        Spacer(modifier = Modifier.height(24.dp))
-        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f)), elevation = CardDefaults.cardElevation(4.dp)) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("Статистика", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF212121))
-                Spacer(modifier = Modifier.height(12.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    StatItem("Всего XP", "2,450")
-                    StatItem("Уроков пройдено", "24")
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    StatItem("Игр сыграно", "15")
-                    StatItem("Дней подряд", "7 🔥")
-                }
-            }
-        }
-        Spacer(modifier = Modifier.height(24.dp))
-        Card(modifier = Modifier.fillMaxWidth().clickable { navController.navigate("family_plan") }, shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f)), elevation = CardDefaults.cardElevation(4.dp)) {
-            Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Image(painter = painterResource(id = R.drawable.family), contentDescription = "Семейный тариф", modifier = Modifier.size(48.dp), contentScale = ContentScale.Fit)
-                Spacer(modifier = Modifier.width(16.dp))
-                Column {
-                    Text("Семейный тариф", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF212121))
-                    Text("До 5 человек, скидка 30% →", fontSize = 14.sp, color = Color(0xFF616161))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun StatItem(label: String, value: String) {
-    Column(horizontalAlignment = Alignment.Start) {
-        Text(label, fontSize = 14.sp, color = Color(0xFF616161))
-        Text(value, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF8B5A2B))
-    }
-}
 
 // ---------- СЕМЕЙНЫЙ ТАРИФ ----------
 @OptIn(ExperimentalMaterial3Api::class)

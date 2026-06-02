@@ -153,7 +153,7 @@ fun CyberShieldGame(navController: NavController) {
 
                 Text(
                     "🛡 КиберЗащитник",
-                    color = Color.Green,
+                    color = Color(0xFF2E8058),
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -290,7 +290,7 @@ fun CyberShieldGame(navController: NavController) {
 
                         Text(
                             message,
-                            color = if (success) Color.Green else Color.Red,
+                            color = if (success) Color(0xFF2E8058) else Color( 0xFF9B0C3F),
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
                         )

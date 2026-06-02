@@ -369,14 +369,14 @@ fun RootConstructorGame(navController: NavController) {
                                 Icon(
                                     Icons.Default.Warning,
                                     null,
-                                    tint = Color.Red
+                                    tint = Color( 0xFF9B0C3F)
                                 )
 
                                 Spacer(modifier = Modifier.width(8.dp))
 
                                 Text(
                                     steps[currentStep].warning,
-                                    color = Color.Red,
+                                    color = Color( 0xFF9B0C3F),
                                     fontSize = 15.sp
                                 )
                             }
@@ -425,7 +425,7 @@ fun RootConstructorGame(navController: NavController) {
 
                         Text(
                             actionMessage,
-                            color = if (isSuccess) Color.Green else Color.Red,
+                            color = if (isSuccess) Color(0xFF2E8058) else Color( 0xFF9B0C3F),
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
                         )

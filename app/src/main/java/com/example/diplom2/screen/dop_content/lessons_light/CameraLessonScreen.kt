@@ -271,14 +271,14 @@ fun CameraLessonScreen(navController: NavController, userId: Long) {
             Spacer(modifier = Modifier.height(16.dp))
 
             if (photoSaved) {
-                Text("✅ Фото открыто! Вы можете увеличить его пальцами, отправить или удалить.", color = Color.Green)
+                Text("✅ Фото открыто! Вы можете увеличить его пальцами, отправить или удалить.", color = Color(0xFF2E8058))
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
                     onClick = { step = 3; score += 15 },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B5A2B))
                 ) { Text("Далее", color = Color.White) }
             } else {
-                Text("❌ Нажмите на фото, чтобы открыть галерею", color = Color.Red)
+                Text("❌ Нажмите на фото, чтобы открыть галерею", color = Color( 0xFF9B0C3F))
             }
 
             Text("Очки: $score", fontSize = 14.sp, color = Color(0xFF8B5A2B))

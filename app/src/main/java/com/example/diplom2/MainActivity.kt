@@ -26,10 +26,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.diplom2.screen.AuthScreen
-import com.example.diplom2.screen.LightScreen
-import com.example.diplom2.screen.MediumScreen
-import com.example.diplom2.screen.ExpertScreen
+import bd.AppDatabase
+import com.example.diplom2.screen.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import repository.UserRepository
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,11 +45,31 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun SmartphoneLearningApp() {
     val context = LocalContext.current
-    val prefs = remember { context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE) }
+    val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
     var isLoggedIn by remember { mutableStateOf(prefs.getLong("userId", -1) != -1L) }
     var userId by remember { mutableStateOf(prefs.getLong("userId", -1)) }
     var showOnboarding by remember { mutableStateOf(!prefs.getBoolean("onboarding_completed", false)) }
     var selectedLevel by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+
+    // Загрузка уровня пользователя из БД при входе
+    LaunchedEffect(userId) {
+        if (userId != -1L) {
+            val db = AppDatabase.getInstance(context)
+            val userRepo = UserRepository(db.userDao())
+            val user = withContext(Dispatchers.IO) {
+                userRepo.getUser(userId)
+            }
+            user?.let {
+                selectedLevel = when (it.levelId) {
+                    1 -> "beginner"
+                    2 -> "intermediate"
+                    3 -> "expert"
+                    else -> null
+                }
+            }
+        }
+    }
 
     if (!isLoggedIn) {
         AuthScreen(onLoginSuccess = { id ->
@@ -55,6 +77,22 @@ fun SmartphoneLearningApp() {
             prefs.edit().putLong("userId", id).apply()
             isLoggedIn = true
             showOnboarding = !prefs.getBoolean("onboarding_completed", false)
+            // После входа загрузим уровень
+            scope.launch {
+                val db = AppDatabase.getInstance(context)
+                val userRepo = UserRepository(db.userDao())
+                val user = withContext(Dispatchers.IO) {
+                    userRepo.getUser(id)
+                }
+                user?.let {
+                    selectedLevel = when (it.levelId) {
+                        1 -> "beginner"
+                        2 -> "intermediate"
+                        3 -> "expert"
+                        else -> null
+                    }
+                }
+            }
         })
         return
     }
@@ -70,18 +108,57 @@ fun SmartphoneLearningApp() {
     if (selectedLevel == null) {
         UserLevelSelectionScreen(onLevelSelected = { level ->
             selectedLevel = level
-            // Здесь можно сохранить уровень пользователя в БД
+            // Сохраняем уровень пользователя в БД
+            if (userId != -1L) {
+                scope.launch {
+                    val db = AppDatabase.getInstance(context)
+                    val userRepo = UserRepository(db.userDao())
+                    val user = withContext(Dispatchers.IO) {
+                        userRepo.getUser(userId)
+                    }
+                    user?.let {
+                        val newLevel = when (level) {
+                            "beginner" -> 1
+                            "intermediate" -> 2
+                            "expert" -> 3
+                            else -> 1
+                        }
+                        val updatedUser = it.copy(levelId = newLevel)
+                        withContext(Dispatchers.IO) {
+                            userRepo.updateUser(updatedUser)
+                        }
+                    }
+                }
+            }
         })
         return
     }
 
+    // Функция выхода из аккаунта
+    fun handleLogout() {
+        prefs.edit().remove("userId").apply()
+        prefs.edit().putBoolean("onboarding_completed", false).apply()
+        isLoggedIn = false
+        userId = -1
+        selectedLevel = null
+        showOnboarding = true
+    }
+
     when (selectedLevel) {
-        "beginner" -> LightScreen(userId = userId)
-        "intermediate" -> MediumScreen(userId = userId)
-        "expert" -> ExpertScreen(userId = userId)
+        "beginner" -> {
+            val navController = androidx.navigation.compose.rememberNavController()
+            LightScreen(userId = userId, onLogout = { handleLogout() })
+        }
+        "intermediate" -> {
+            MediumScreen(userId = userId, onLogout = { handleLogout() })
+        }
+        "expert" -> {
+            ExpertScreen(userId = userId, onLogout = { handleLogout() })
+        }
     }
 }
 
+// Остальные функции (OnboardingScreen, UserLevelSelectionScreen, LevelOption) остаются без изменений
 // ---------- ОНБОРДИНГ ----------
 @Composable
 fun OnboardingScreen(onFinish: () -> Unit) {

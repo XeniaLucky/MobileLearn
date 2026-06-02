@@ -1,13 +1,7 @@
 package com.example.diplom2.screen
 
-import GameExpert.AdbCommandoGame
-import GameExpert.CyberShieldGame
-import GameExpert.RootConstructorGame
-import GameExpert.CustomBuilderGame
-import GameExpert.SmartDetectiveGame
-import android.widget.Toast
-import androidx.compose.ui.text.style.TextOverflow
 import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -15,6 +9,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,17 +30,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import com.example.diplom2.R
 import com.example.diplom2.screen.dop_content.lessons_expert.*
-import com.example.diplom2.screen.saveLessonProgress
+import GameExpert.*
 
 // ── Функции для активного урока (Expert) ──
 // ── Дополнительные функции для сохранения/восстановления шага ──
@@ -93,7 +88,7 @@ fun getActiveProgressExpert(context: Context, userId: Long): Float {
 }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ExpertScreen(userId: Long) {
+fun ExpertScreen(userId: Long, onLogout: () -> Unit) {
     val navController = rememberNavController()
     val backgroundColor = Color(0xFF09020A)
     val accentColor = Color(0xFFD4AF37)
@@ -108,49 +103,25 @@ fun ExpertScreen(userId: Long) {
                     icon = { Icon(Icons.Default.School, contentDescription = "Курсы") },
                     label = { Text("Курсы") },
                     selected = navController.currentDestination?.route == "home",
-                    onClick = { navController.navigate("home") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = accentColor,
-                        selectedTextColor = accentColor,
-                        unselectedIconColor = Color.White.copy(0.6f),
-                        unselectedTextColor = Color.White.copy(0.6f)
-                    )
+                    onClick = { navController.navigate("home") }
                 )
                 NavigationBarItem(
                     icon = { Icon(Icons.Default.Games, contentDescription = "Игры") },
                     label = { Text("Игры") },
                     selected = navController.currentDestination?.route == "games",
-                    onClick = { navController.navigate("games") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = accentColor,
-                        selectedTextColor = accentColor,
-                        unselectedIconColor = Color.White.copy(0.6f),
-                        unselectedTextColor = Color.White.copy(0.6f)
-                    )
+                    onClick = { navController.navigate("games") }
                 )
                 NavigationBarItem(
                     icon = { Icon(Icons.Default.EmojiEvents, contentDescription = "Награды") },
                     label = { Text("Награды") },
                     selected = navController.currentDestination?.route == "rewards",
-                    onClick = { navController.navigate("rewards") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = accentColor,
-                        selectedTextColor = accentColor,
-                        unselectedIconColor = Color.White.copy(0.6f),
-                        unselectedTextColor = Color.White.copy(0.6f)
-                    )
+                    onClick = { navController.navigate("rewards") }
                 )
                 NavigationBarItem(
                     icon = { Icon(Icons.Default.Person, contentDescription = "Профиль") },
                     label = { Text("Профиль") },
                     selected = navController.currentDestination?.route == "profile",
-                    onClick = { navController.navigate("profile") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = accentColor,
-                        selectedTextColor = accentColor,
-                        unselectedIconColor = Color.White.copy(0.6f),
-                        unselectedTextColor = Color.White.copy(0.6f)
-                    )
+                    onClick = { navController.navigate("profile") }
                 )
             }
         },
@@ -167,37 +138,38 @@ fun ExpertScreen(userId: Long) {
                 composable("games") {
                     ExpertGamesScreen(navController = navController, accentColor = accentColor)
                 }
-                composable("game_adb_commando") {
-                    AdbCommandoGame(navController)
+                composable("rewards") {
+                    ExpertRewardsScreen(accentColor)
                 }
-
-                composable("game_cybershield") {
-                    CyberShieldGame(navController)
+                composable("profile") {
+                    UniversalProfileScreen(
+                        navController = navController,
+                        userId = userId,
+                        levelPrefix = "expert_",
+                        accentColor = accentColor,
+                        onLogout = onLogout
+                    )
                 }
-
-                composable("game_root_constructor") {
-                    RootConstructorGame(navController)
+                composable("family_plan") {
+                    ExpertFamilyPlanScreen(navController = navController, accentColor = accentColor)
                 }
-
-                composable("game_custom_builder") {
-                    CustomBuilderGame(navController)
-                }
-
-                composable("game_smart_detective") {
-                    SmartDetectiveGame(navController)
-                }
-
-                composable("extra_lessons") {
-                    ExpertExtraLessonsScreen(navController = navController, accentColor = accentColor, userId = userId)
-                }
-                // 6 основных уроков
+                // Игры
+                composable("game_adb_commando") { AdbCommandoGame(navController) }
+                composable("game_cybershield") { CyberShieldGame(navController) }
+                composable("game_root_constructor") { RootConstructorGame(navController) }
+                composable("game_custom_builder") { CustomBuilderGame(navController) }
+                composable("game_smart_detective") { SmartDetectiveGame(navController) }
+                // Уроки
                 composable("lesson_adb") { LessonAdbScreen(navController, userId) }
                 composable("lesson_root") { LessonRootScreen(navController, userId) }
                 composable("lesson_custom_roms") { LessonCustomRomsScreen(navController, userId) }
                 composable("lesson_optimization") { LessonOptimizationScreen(navController, userId) }
                 composable("lesson_scripts") { LessonScriptsScreen(navController, userId) }
                 composable("lesson_security") { LessonSecurityScreen(navController, userId) }
-                // Дополнительные уроки (4 штуки)
+                composable("extra_lessons") {
+                    ExpertExtraLessonsScreen(navController = navController, accentColor = accentColor, userId = userId)
+                }
+                // Дополнительные уроки
                 composable("lesson_logging") { LessonLoggingScreen(navController, userId) }
                 composable("lesson_filesystem") { LessonFilesystemScreen(navController, userId) }
                 composable("lesson_networking") { LessonNetworkingScreen(navController, userId) }
@@ -206,7 +178,6 @@ fun ExpertScreen(userId: Long) {
         }
     }
 }
-
 @Composable
 fun ExpertHomeScreen(navController: NavController, accentColor: Color, userId: Long) {
     val context = LocalContext.current
@@ -315,7 +286,7 @@ fun ExpertHomeScreen(navController: NavController, accentColor: Color, userId: L
                                 Text(lesson.title, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.White, textAlign = TextAlign.Center)
                                 val isCompleted = prefs.getBoolean("${lesson.progressKey}_completed", false)
                                 if (isCompleted) {
-                                    Text("✅ Пройдено", fontSize = 10.sp, color = Color.Green)
+                                    Text("✅ Пройдено", fontSize = 10.sp, color = Color(0xFF2E8058))
                                 }
                             }
                         }

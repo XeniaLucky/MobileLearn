@@ -144,7 +144,9 @@ fun CallLessonScreen(navController: NavController, userId: Long, onComplete: () 
             )
 
             if (errorMessage != null && (errorMessage!!.contains("email") || errorMessage!!.contains("телефон"))) {
-                Text(errorMessage!!, color = Color.Red, fontSize = 12.sp)
+                Text(errorMessage!!, color = Color(
+                    0xFF9B0C3F
+                ), fontSize = 12.sp)
             }
 
             Button(
@@ -218,7 +220,7 @@ fun CallLessonScreen(navController: NavController, userId: Long, onComplete: () 
                                 callActive = false
                                 callEnded = true
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                            colors = ButtonDefaults.buttonColors(containerColor = Color( 0xFF9B0C3F))
                         ) {
                             Icon(Icons.Default.Close, contentDescription = null)
                             Spacer(modifier = Modifier.width(4.dp))
@@ -231,7 +233,7 @@ fun CallLessonScreen(navController: NavController, userId: Long, onComplete: () 
                                 score += 15
                                 step = 3
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Green)
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E8058))
                         ) {
                             Icon(Icons.Default.Call, contentDescription = null)
                             Spacer(modifier = Modifier.width(4.dp))
@@ -300,7 +302,7 @@ fun CallLessonScreen(navController: NavController, userId: Long, onComplete: () 
                                 score += 20
                                 step = 4
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                            colors = ButtonDefaults.buttonColors(containerColor = Color( 0xFF9B0C3F))
                         ) {
                             Icon(Icons.Default.CallEnd, contentDescription = null)
                             Spacer(modifier = Modifier.width(4.dp))

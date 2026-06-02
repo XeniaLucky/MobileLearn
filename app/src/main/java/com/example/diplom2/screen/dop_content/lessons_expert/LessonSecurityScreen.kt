@@ -228,7 +228,7 @@ fun LessonSecurityScreen(navController: NavController, userId: Long) {
             }
             if (firewallInstalled) {
                 item {
-                    Text("✅ Фаервол защищает ваш трафик!", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Фаервол защищает ваш трафик!", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -241,7 +241,7 @@ fun LessonSecurityScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите установку фаервола", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите установку фаервола", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -336,7 +336,7 @@ fun LessonSecurityScreen(navController: NavController, userId: Long) {
             }
             if (permissionsChecked) {
                 item {
-                    Text("✅ Разрешения под контролем!", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Разрешения под контролем!", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -349,7 +349,7 @@ fun LessonSecurityScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите настройку контроля разрешений", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите настройку контроля разрешений", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -442,7 +442,7 @@ fun LessonSecurityScreen(navController: NavController, userId: Long) {
             }
             if (magiskHideConfigured) {
                 item {
-                    Text("✅ Root скрыт от выбранных приложений!", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Root скрыт от выбранных приложений!", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -455,7 +455,7 @@ fun LessonSecurityScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите настройку Magisk Hide", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите настройку Magisk Hide", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -546,7 +546,7 @@ fun LessonSecurityScreen(navController: NavController, userId: Long) {
             }
             if (encryptionChecked) {
                 item {
-                    Text("✅ Устройство защищено шифрованием!", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Устройство защищено шифрованием!", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -559,7 +559,7 @@ fun LessonSecurityScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите проверку шифрования", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите проверку шифрования", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -665,7 +665,7 @@ fun LessonSecurityScreen(navController: NavController, userId: Long) {
             }
             if (secureByDefault) {
                 item {
-                    Text("✅ Поздравляю! Вы знаете, как защитить рутованный телефон!", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Поздравляю! Вы знаете, как защитить рутованный телефон!", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -678,7 +678,7 @@ fun LessonSecurityScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите, что вы изучили правила", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите, что вы изучили правила", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {

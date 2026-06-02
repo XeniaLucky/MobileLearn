@@ -229,7 +229,7 @@ fun LessonNetworkingScreen(navController: NavController, userId: Long) {
             }
             if (termuxInstalled) {
                 item {
-                    Text("✅ Веб-сервер запущен! Можно переходить к SSH.", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Веб-сервер запущен! Можно переходить к SSH.", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -242,7 +242,7 @@ fun LessonNetworkingScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите установку Termux и запуск сервера", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите установку Termux и запуск сервера", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -334,7 +334,7 @@ fun LessonNetworkingScreen(navController: NavController, userId: Long) {
             }
             if (sshConfigured) {
                 item {
-                    Text("✅ SSH-сервер работает! Теперь можно управлять телефоном удалённо.", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ SSH-сервер работает! Теперь можно управлять телефоном удалённо.", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -347,7 +347,7 @@ fun LessonNetworkingScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите настройку SSH", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите настройку SSH", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -444,7 +444,7 @@ fun LessonNetworkingScreen(navController: NavController, userId: Long) {
             }
             if (portForwardingLearned) {
                 item {
-                    Text("✅ Отлично! Теперь вы знаете, как сделать сервер доступным извне.", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Отлично! Теперь вы знаете, как сделать сервер доступным извне.", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -457,7 +457,7 @@ fun LessonNetworkingScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите изучение проброса портов", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите изучение проброса портов", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {
@@ -564,7 +564,7 @@ fun LessonNetworkingScreen(navController: NavController, userId: Long) {
             }
             if (webServerStarted) {
                 item {
-                    Text("✅ Поздравляю! Вы освоили сетевые возможности Android!", color = Color.Green, fontSize = 14.sp)
+                    Text("✅ Поздравляю! Вы освоили сетевые возможности Android!", color = Color(0xFF2E8058), fontSize = 14.sp)
                 }
                 item {
                     Button(
@@ -577,7 +577,7 @@ fun LessonNetworkingScreen(navController: NavController, userId: Long) {
                 }
             } else {
                 item {
-                    Text("❌ Подтвердите, что вы изучили утилиты", color = Color.Red, fontSize = 14.sp)
+                    Text("❌ Подтвердите, что вы изучили утилиты", color = Color( 0xFF9B0C3F), fontSize = 14.sp)
                 }
             }
             item {

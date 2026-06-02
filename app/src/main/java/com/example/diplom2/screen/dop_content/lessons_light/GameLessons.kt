@@ -242,7 +242,7 @@ fun PowerLessonScreen(navController: NavController, userId: Long, onComplete: ()
                         fontSize = 16.sp
                     )
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text("Все несохранённые данные будут потеряны.", fontSize = 12.sp, color = Color.Red)
+                    Text("Все несохранённые данные будут потеряны.", fontSize = 12.sp, color = Color( 0xFF9B0C3F))
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
