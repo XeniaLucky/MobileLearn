@@ -249,10 +249,12 @@ fun MediumHomeScreen(userId: Long, accentColor: Color, navController: NavControl
     )
     // =================================================
 
+    val scrollState = rememberScrollState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(scrollState)   // используем эту переменную
             .padding(16.dp)
     ) {
         // Приветствие
@@ -397,9 +399,11 @@ fun MediumHomeScreen(userId: Long, accentColor: Color, navController: NavControl
             containerColor = Color(0xFF1E1A2F),
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.School, contentDescription = null, tint = Color(0xFF9C27B0), modifier = Modifier.size(28.dp))
+                    Icon(Icons.Default.School, contentDescription = null, tint = Color(0xFFDCD778), modifier = Modifier.size(28.dp))
                     Spacer(modifier = Modifier.width(10.dp))
-                    Text("Добро пожаловать в средний уровень!", fontWeight = FontWeight.Bold, color = Color(0xFFE1BEE7), fontSize = 20.sp)
+                    Text("Добро пожаловать в средний уровень!", fontWeight = FontWeight.Bold, color = Color(
+                        0xFF63D79F
+                    ), fontSize = 20.sp)
                 }
             },
             text = {
@@ -413,7 +417,7 @@ fun MediumHomeScreen(userId: Long, accentColor: Color, navController: NavControl
                         showIntroDialog = false
                         tutorialActive = true
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF9C27B0)),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF9A8B5E)),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text("Понятно, начать!", color = Color.White)
@@ -440,7 +444,9 @@ fun MediumHomeScreen(userId: Long, accentColor: Color, navController: NavControl
             onSkip = {
                 tutorialActive = false
                 tutorialPrefs.edit().putBoolean("shown", true).apply()
-            }
+            },
+            scrollState = scrollState,
+            accentColor = accentColor
         )
     }
 }

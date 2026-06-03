@@ -26,7 +26,7 @@ import androidx.compose.ui.zIndex
 import kotlin.math.roundToInt
 
 data class TutorialStep(
-    val targetKey: String,       // ключ элемента, на который указываем
+    val targetKey: String,
     val title: String,
     val text: String,
     val icon: ImageVector
@@ -38,7 +38,9 @@ fun TutorialOverlay(
     currentStep: Int,
     elementBounds: Map<String, Rect>,
     onNext: () -> Unit,
-    onSkip: () -> Unit
+    onSkip: () -> Unit,
+    scrollState: androidx.compose.foundation.ScrollState? = null,
+    accentColor: Color = Color(0xFF9C27B0)   // цвет подсветки
 ) {
     if (currentStep >= steps.size) return
     val step = steps[currentStep]
@@ -47,6 +49,14 @@ fun TutorialOverlay(
     val displayMetrics = LocalContext.current.resources.displayMetrics
     val screenWidthPx = displayMetrics.widthPixels.toFloat()
     val screenHeightPx = displayMetrics.heightPixels.toFloat()
+
+    // Автопрокрутка к элементу
+    LaunchedEffect(currentStep, targetBounds) {
+        if (targetBounds != null && scrollState != null) {
+            val targetY = targetBounds.top - 100 // отступ сверху, чтобы не впритык
+            scrollState.animateScrollTo(targetY.roundToInt())
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -69,7 +79,7 @@ fun TutorialOverlay(
                     .height(with(density) { (targetBounds.height + paddingPx * 2).toDp() })
                     .border(
                         width = 3.dp,
-                        brush = Brush.horizontalGradient(listOf(Color(0xFF9C27B0), Color(0xFFE040FB))),
+                        brush = Brush.horizontalGradient(listOf(accentColor, accentColor.copy(alpha = 0.6f))),
                         shape = RoundedCornerShape(12.dp)
                     )
             )
@@ -83,7 +93,8 @@ fun TutorialOverlay(
             screenWidthPx = screenWidthPx,
             screenHeightPx = screenHeightPx,
             onNext = onNext,
-            onSkip = onSkip
+            onSkip = onSkip,
+            accentColor = accentColor
         )
     }
 }
@@ -97,7 +108,8 @@ fun CoachMarkCard(
     screenWidthPx: Float,
     screenHeightPx: Float,
     onNext: () -> Unit,
-    onSkip: () -> Unit
+    onSkip: () -> Unit,
+    accentColor: Color
 ) {
     val density = LocalDensity.current
     val cardWidthPx = with(density) { 280.dp.toPx() }
@@ -152,7 +164,7 @@ fun CoachMarkCard(
                     modifier = Modifier
                         .offset { IntOffset(arrowXOffsetPx.roundToInt() - arrowSizePx.roundToInt(), 0) }
                         .size(0.dp)
-                        .drawArrowDown(arrowSizePx, Color(0xFF2A2438))
+                        .drawArrowDown(arrowSizePx, accentColor)
                 )
                 Spacer(modifier = Modifier.height(arrowSizePx.dp))
             }
@@ -165,10 +177,10 @@ fun CoachMarkCard(
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(step.icon, contentDescription = null, tint = Color(0xFFE040FB), modifier = Modifier.size(22.dp))
+                        Icon(step.icon, contentDescription = null, tint = accentColor, modifier = Modifier.size(22.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(step.title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.weight(1f))
-                        Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFF9C27B0)) {
+                        Surface(shape = RoundedCornerShape(10.dp), color = accentColor) {
                             Text(
                                 "${stepIndex + 1}/$totalSteps",
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
@@ -192,7 +204,7 @@ fun CoachMarkCard(
                         Spacer(modifier = Modifier.width(4.dp))
                         Button(
                             onClick = onNext,
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF9C27B0)),
+                            colors = ButtonDefaults.buttonColors(containerColor = accentColor),
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
                             shape = RoundedCornerShape(10.dp),
                             modifier = Modifier.height(32.dp)
@@ -209,7 +221,7 @@ fun CoachMarkCard(
                     modifier = Modifier
                         .offset { IntOffset(arrowXOffsetPx.roundToInt() - arrowSizePx.roundToInt(), 0) }
                         .size(0.dp)
-                        .drawArrowUp(arrowSizePx, Color(0xFF2A2438))
+                        .drawArrowUp(arrowSizePx, accentColor)
                 )
             }
         }

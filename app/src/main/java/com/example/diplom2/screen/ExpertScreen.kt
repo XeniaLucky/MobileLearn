@@ -101,21 +101,12 @@ fun ExpertScreen(userId: Long, onLogout: () -> Unit, onLevelChange: (String) -> 
     val backgroundColor = Color(0xFF09020A)
     val accentColor = Color(0xFFD4AF37)
 
-    // Туториал
     val tutorialPrefs = LocalContext.current.getSharedPreferences("expert_tutorial", Context.MODE_PRIVATE)
     var showIntroDialog by remember { mutableStateOf(!tutorialPrefs.getBoolean("shown", false)) }
     var tutorialActive by remember { mutableStateOf(false) }
     var currentTutorialStep by remember { mutableIntStateOf(0) }
     val elementBounds = remember { mutableStateMapOf<String, Rect>() }
-
-    val expertTutorialSteps = listOf(
-        TutorialStep("active_course_card", "Активный курс", "Продолжайте обучение с того места, где остановились.", Icons.Default.PlayArrow),
-        TutorialStep("module_0", "Модули", "Уроки экспертного уровня. Нажимайте на карточку, чтобы начать.", Icons.Default.MenuBook),
-        TutorialStep("module_1", "Модули (продолжение)", "Изучайте ADB, рутирование, кастомные прошивки и другие темы.", Icons.Default.Smartphone),
-        TutorialStep("extra_lessons_button", "Ещё уроки", "Дополнительные уроки по отладке, файловой системе, сети и эмуляции.", Icons.Default.Add),
-        TutorialStep("games_tab", "Игры", "Тренировки для экспертов.", Icons.Default.Games),
-        TutorialStep("profile_tab", "Профиль", "Ваши данные, статистика и смена уровня.", Icons.Default.Person)
-    )
+    val scrollState = rememberScrollState()
 
     Scaffold(
         bottomBar = {
@@ -168,31 +159,23 @@ fun ExpertScreen(userId: Long, onLogout: () -> Unit, onLevelChange: (String) -> 
                         tutorialActive = tutorialActive,
                         currentTutorialStep = currentTutorialStep,
                         elementBounds = elementBounds,
-                        onTutorialStart = { tutorialActive = true },
-                        onTutorialNext = { currentTutorialStep++ },
-                        onTutorialFinish = {
-                            tutorialActive = false
-                            tutorialPrefs.edit().putBoolean("shown", true).apply()
-                        },
+                        scrollState = scrollState,
                         showIntroDialog = showIntroDialog,
                         onIntroConfirm = {
                             showIntroDialog = false
                             tutorialActive = true
+                        },
+                        onTutorialNext = { currentTutorialStep++ },
+                        onTutorialFinish = {
+                            tutorialActive = false
+                            tutorialPrefs.edit().putBoolean("shown", true).apply()
                         }
                     )
                 }
-                composable("games") {
-                    ExpertGamesScreen(navController = navController, accentColor = accentColor)
-                }
-                composable("rewards") {
-                    UnifiedRewardsScreen(accentColor, userId)
-                }
-                composable("faq") {
-                    ExpertFaqScreen(navController, accentColor)
-                }
-                composable("ai_chat") {
-                    AiChatScreen(navController = navController, accentColor = accentColor)
-                }
+                composable("games") { ExpertGamesScreen(navController = navController, accentColor = accentColor) }
+                composable("rewards") { UnifiedRewardsScreen(accentColor, userId) }
+                composable("faq") { ExpertFaqScreen(navController, accentColor) }
+                composable("ai_chat") { AiChatScreen(navController = navController, accentColor = accentColor) }
                 composable("profile") {
                     UniversalProfileScreen(
                         navController = navController,
@@ -204,9 +187,7 @@ fun ExpertScreen(userId: Long, onLogout: () -> Unit, onLevelChange: (String) -> 
                         onLevelChange = onLevelChange
                     )
                 }
-                composable("family_plan") {
-                    ExpertFamilyPlanScreen(navController, backgroundColor, userId)
-                }
+                composable("family_plan") { ExpertFamilyPlanScreen(navController, backgroundColor, userId) }
                 // Игры
                 composable("game_adb_commando") { AdbCommandoGame(navController) }
                 composable("game_cybershield") { CyberShieldGame(navController) }
@@ -220,10 +201,7 @@ fun ExpertScreen(userId: Long, onLogout: () -> Unit, onLevelChange: (String) -> 
                 composable("lesson_optimization") { LessonOptimizationScreen(navController, userId) }
                 composable("lesson_scripts") { LessonScriptsScreen(navController, userId) }
                 composable("lesson_security") { LessonSecurityScreen(navController, userId) }
-                composable("extra_lessons") {
-                    ExpertExtraLessonsScreen(navController = navController, accentColor = accentColor, userId = userId)
-                }
-                // Дополнительные уроки
+                composable("extra_lessons") { ExpertExtraLessonsScreen(navController = navController, accentColor = accentColor, userId = userId) }
                 composable("lesson_logging") { LessonLoggingScreen(navController, userId) }
                 composable("lesson_filesystem") { LessonFilesystemScreen(navController, userId) }
                 composable("lesson_networking") { LessonNetworkingScreen(navController, userId) }
@@ -241,11 +219,11 @@ fun ExpertHomeScreen(
     tutorialActive: Boolean,
     currentTutorialStep: Int,
     elementBounds: MutableMap<String, Rect>,
-    onTutorialStart: () -> Unit,
-    onTutorialNext: () -> Unit,
-    onTutorialFinish: () -> Unit,
+    scrollState: androidx.compose.foundation.ScrollState,
     showIntroDialog: Boolean,
-    onIntroConfirm: () -> Unit
+    onIntroConfirm: () -> Unit,
+    onTutorialNext: () -> Unit,
+    onTutorialFinish: () -> Unit
 ) {
     val context = LocalContext.current
     val prefs = context.getSharedPreferences("progress_expert_$userId", Context.MODE_PRIVATE)
@@ -270,7 +248,6 @@ fun ExpertHomeScreen(
     val expertTutorialSteps = listOf(
         TutorialStep("active_course_card", "Активный курс", "Продолжайте обучение с того места, где остановились.", Icons.Default.PlayArrow),
         TutorialStep("module_0", "Модули", "Уроки экспертного уровня. Нажимайте на карточку, чтобы начать.", Icons.Default.MenuBook),
-        TutorialStep("module_1", "Модули (продолжение)", "Изучайте ADB, рутирование, кастомные прошивки и другие темы.", Icons.Default.Smartphone),
         TutorialStep("extra_lessons_button", "Ещё уроки", "Дополнительные уроки по отладке, файловой системе, сети и эмуляции.", Icons.Default.Add),
         TutorialStep("games_tab", "Игры", "Тренировки для экспертов.", Icons.Default.Games),
         TutorialStep("profile_tab", "Профиль", "Ваши данные, статистика и смена уровня.", Icons.Default.Person)
@@ -279,7 +256,7 @@ fun ExpertHomeScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(scrollState)
             .padding(16.dp)
     ) {
         Text("Добро пожаловать, Мастер!", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color.White)
@@ -331,7 +308,7 @@ fun ExpertHomeScreen(
                                 .height(160.dp)
                                 .clickable { navController.navigate(lesson.route) }
                                 .onGloballyPositioned { coords ->
-                                    if (globalIndex < 2) elementBounds["module_$globalIndex"] = coords.boundsInWindow()
+                                    if (globalIndex == 0) elementBounds["module_0"] = coords.boundsInWindow()
                                 },
                             shape = RoundedCornerShape(12.dp),
                             colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A2E))
@@ -375,7 +352,7 @@ fun ExpertHomeScreen(
             containerColor = Color(0xFF1E1A2F),
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.School, contentDescription = null, tint = Color(0xFF9C27B0), modifier = Modifier.size(28.dp))
+                    Icon(Icons.Default.School, contentDescription = null, tint = accentColor, modifier = Modifier.size(28.dp))
                     Spacer(modifier = Modifier.width(10.dp))
                     Text("Добро пожаловать в экспертный уровень!", fontWeight = FontWeight.Bold, color = Color(0xFFE1BEE7), fontSize = 20.sp)
                 }
@@ -388,7 +365,7 @@ fun ExpertHomeScreen(
             confirmButton = {
                 Button(
                     onClick = onIntroConfirm,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF9C27B0)),
+                    colors = ButtonDefaults.buttonColors(containerColor = accentColor),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text("Понятно, начать!", color = Color.White)
@@ -407,12 +384,12 @@ fun ExpertHomeScreen(
                 if (currentTutorialStep + 1 < expertTutorialSteps.size) onTutorialNext()
                 else onTutorialFinish()
             },
-            onSkip = onTutorialFinish
+            onSkip = onTutorialFinish,
+            scrollState = scrollState,
+            accentColor = accentColor
         )
     }
 }
-
-// Остальные функции (ExpertGamesScreen, ExpertFaqScreen, ExpertFamilyPlanScreen и т.д.) остаются без изменений.
 // ---------- ЭКРАН "ЕЩЁ УРОКИ" ----------
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -54,17 +54,16 @@ fun LightScreen(userId: Long, onLogout: () -> Unit, onLevelChange: (String) -> U
     val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
     val navController = rememberNavController()
     val backgroundColor = Color(0xFFEFE3D3)
-    var showTutorial by remember { mutableStateOf(!prefs.getBoolean("light_tutorial_done", false)) }
 
     // Состояния туториала
     var tutorialActive by remember { mutableStateOf(false) }
     var currentTutorialStep by remember { mutableIntStateOf(0) }
     val elementBounds = remember { mutableStateMapOf<String, Rect>() }
+    val scrollState = rememberScrollState()
 
-    // Шаги туториала для главного экрана
+    // Шаги туториала для лёгкого уровня
     val lightTutorialSteps = listOf(
         TutorialStep("lesson_card_0", "Уроки", "Нажимайте на карточку, чтобы начать обучение.", Icons.Default.School),
-        TutorialStep("lesson_card_1", "Игровые уроки", "Интерактивные уроки с практикой.", Icons.Default.Games),
         TutorialStep("guide_tab", "Справочник", "Ответы на частые вопросы.", Icons.Default.Help),
         TutorialStep("profile_tab", "Профиль", "Ваши данные, статистика и настройки.", Icons.Default.Person)
     )
@@ -75,7 +74,6 @@ fun LightScreen(userId: Long, onLogout: () -> Unit, onLevelChange: (String) -> U
                 containerColor = Color(0xFFEFE3D3).copy(alpha = 0.95f),
                 tonalElevation = 0.dp,
                 modifier = Modifier.onGloballyPositioned { coords ->
-                    // Захватываем координаты нижних вкладок
                     elementBounds["guide_tab"] = coords.boundsInWindow()
                     elementBounds["profile_tab"] = coords.boundsInWindow()
                 }
@@ -111,11 +109,14 @@ fun LightScreen(userId: Long, onLogout: () -> Unit, onLevelChange: (String) -> U
                         tutorialActive = tutorialActive,
                         currentTutorialStep = currentTutorialStep,
                         elementBounds = elementBounds,
+                        scrollState = scrollState,
+                        accentColor = Color(0xFF8B5A2B),
                         onTutorialStart = { tutorialActive = true },
                         onTutorialNext = { currentTutorialStep++ },
                         onTutorialFinish = {
                             tutorialActive = false
-                            prefs.edit().putBoolean("light_tutorial_done", true).apply()
+                            context.getSharedPreferences("light_tutorial", Context.MODE_PRIVATE)
+                                .edit().putBoolean("shown", true).apply()
                         }
                     )
                 }
@@ -132,9 +133,7 @@ fun LightScreen(userId: Long, onLogout: () -> Unit, onLevelChange: (String) -> U
                         onLevelChange = onLevelChange
                     )
                 }
-                composable("family_plan") {
-                    FamilyPlanScreen(navController, backgroundColor, userId)
-                }
+                composable("family_plan") { FamilyPlanScreen(navController, backgroundColor, userId) }
                 // Игровые уроки
                 composable("game_power") { PowerLessonScreen(navController = navController, userId = userId) }
                 composable("game_call") { CallLessonScreen(navController = navController, userId = userId) }
@@ -157,6 +156,8 @@ fun LessonsScreen(
     tutorialActive: Boolean,
     currentTutorialStep: Int,
     elementBounds: MutableMap<String, Rect>,
+    scrollState: androidx.compose.foundation.ScrollState,
+    accentColor: Color,
     onTutorialStart: () -> Unit,
     onTutorialNext: () -> Unit,
     onTutorialFinish: () -> Unit
@@ -174,7 +175,6 @@ fun LessonsScreen(
 
     val lightTutorialSteps = listOf(
         TutorialStep("lesson_card_0", "Уроки", "Нажимайте на карточку, чтобы начать обучение.", Icons.Default.School),
-        TutorialStep("lesson_card_1", "Игровые уроки", "Интерактивные уроки с практикой.", Icons.Default.Games),
         TutorialStep("guide_tab", "Справочник", "Ответы на частые вопросы.", Icons.Default.Help),
         TutorialStep("profile_tab", "Профиль", "Ваши данные, статистика и настройки.", Icons.Default.Person)
     )
@@ -203,8 +203,8 @@ fun LessonsScreen(
                         .fillMaxWidth()
                         .clickable { navController.navigate(route) }
                         .onGloballyPositioned { coords ->
-                            if (index < 2) {
-                                elementBounds["lesson_card_$index"] = coords.boundsInWindow()
+                            if (index == 0) {
+                                elementBounds["lesson_card_0"] = coords.boundsInWindow()
                             }
                         },
                     shape = RoundedCornerShape(20.dp),
@@ -223,14 +223,13 @@ fun LessonsScreen(
         }
     }
 
-    // Интро-диалог
     if (showIntroDialog) {
         AlertDialog(
             onDismissRequest = { },
             containerColor = Color(0xFF1E1A2F),
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.School, contentDescription = null, tint = Color(0xFF9C27B0), modifier = Modifier.size(28.dp))
+                    Icon(Icons.Default.School, contentDescription = null, tint = accentColor, modifier = Modifier.size(28.dp))
                     Spacer(modifier = Modifier.width(10.dp))
                     Text("Добро пожаловать в начальный уровень!", fontWeight = FontWeight.Bold, color = Color(0xFFE1BEE7), fontSize = 20.sp)
                 }
@@ -246,7 +245,7 @@ fun LessonsScreen(
                         showIntroDialog = false
                         onTutorialStart()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF9C27B0)),
+                    colors = ButtonDefaults.buttonColors(containerColor = accentColor),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text("Понятно, начать!", color = Color.White)
@@ -256,20 +255,18 @@ fun LessonsScreen(
         )
     }
 
-    // Оверлей туториала
     if (tutorialActive && currentTutorialStep < lightTutorialSteps.size) {
         TutorialOverlay(
             steps = lightTutorialSteps,
             currentStep = currentTutorialStep,
             elementBounds = elementBounds,
             onNext = {
-                if (currentTutorialStep + 1 < lightTutorialSteps.size) {
-                    onTutorialNext()
-                } else {
-                    onTutorialFinish()
-                }
+                if (currentTutorialStep + 1 < lightTutorialSteps.size) onTutorialNext()
+                else onTutorialFinish()
             },
-            onSkip = onTutorialFinish
+            onSkip = onTutorialFinish,
+            scrollState = scrollState,
+            accentColor = accentColor
         )
     }
 }
