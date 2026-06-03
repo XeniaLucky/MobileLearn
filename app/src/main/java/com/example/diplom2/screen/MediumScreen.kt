@@ -45,6 +45,11 @@ import com.example.diplom2.R
 import com.example.diplom2.screen.dop_content.*
 import com.example.diplom2.screen.dop_content.gameMedium.GameTransferScreen
 import com.example.diplom2.screen.dop_content.lessons_medium.*
+import repository.UserRepository
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import com.example.diplom2.screen.AiChatScreen
 
 // Активный урок (Medium)
 fun setActiveLessonMedium(context: Context, userId: Long, lessonKey: String) {
@@ -90,9 +95,6 @@ fun activateLessonMedium(context: Context, userId: Long, lessonKey: String) {
 }
 // Вспомогательные классы
 data class MediumLessonItem(val title: String, val icon: ImageVector, val route: String, val progressKey: String)
-data class FaqItem1(val question: String, val answer: String)
-data class LessonProgress(val title: String, var completed: Boolean = false, var currentPage: Int = 0, val totalPages: Int = 3)
-data class Achievement(val title: String, val description: String, val icon: String, val isUnlocked: () -> Boolean)
 
 fun saveLessonProgress(context: Context, userId: Long, lessonKey: String, completed: Boolean) {
     val prefs = context.getSharedPreferences("progress_medium_$userId", Context.MODE_PRIVATE)
@@ -101,7 +103,7 @@ fun saveLessonProgress(context: Context, userId: Long, lessonKey: String, comple
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MediumScreen(userId: Long, onLogout: () -> Unit) {
+fun MediumScreen(userId: Long, onLogout: () -> Unit, onLevelChange: (String) -> Unit) {
     val navController = rememberNavController()
     val backgroundColor = Color(0xFFC4D7DB)
     val accentColor = Color(0xFF2C5F6E)
@@ -152,22 +154,27 @@ fun MediumScreen(userId: Long, onLogout: () -> Unit) {
                     MediumGamesScreen(navController = navController, userId = userId, accentColor = accentColor)
                 }
                 composable("rewards") {
-                    MediumRewardsScreen(accentColor = accentColor, userId = userId)
+                    UnifiedRewardsScreen(accentColor, userId)
+                }
+                composable("ai_chat") {
+                    AiChatScreen(navController = navController, accentColor = accentColor)
                 }
                 composable("profile") {
                     UniversalProfileScreen(
                         navController = navController,
                         userId = userId,
                         levelPrefix = "medium_",
-                        accentColor = accentColor,
-                        onLogout = onLogout
+                        accentColor = Color(0xFF2C5F6E),
+                        backgroundColor = Color(0xFFC4D7DB),
+                        onLogout = onLogout,
+                        onLevelChange = onLevelChange
                     )
                 }
                 composable("family_plan") {
-                    MediumFamilyPlanScreen(userId = userId, accentColor = accentColor)
+                    MediumFamilyPlanScreen(navController, backgroundColor, userId)
                 }
                 // Бесплатные игры
-                composable("game_transfer") { GameTransferScreen(navController = navController) }
+                composable("game_transfer") { GameTransferScreen(navController = navController, userId = userId) }
                 composable("game_swipequiz") { SwipeQuizGame(navController = navController, onBack = { navController.popBackStack() }) }
                 composable("game_settingspuzzle") { SettingsPuzzleGame(navController = navController, onBack = { navController.popBackStack() }) }
                 // Платные игры
@@ -392,54 +399,6 @@ fun ExtraLessonsScreen(navController: NavController, userId: Long, accentColor: 
     }
 }
 
-// ---------- ЭКРАН FAQ ----------
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun FaqScreen(navController: NavController, accentColor: Color) {
-    val faqItems = listOf(
-        FaqItem1("Как выбрать смартфон?", "Для игр: мощный процессор и ОЗУ ≥6 ГБ. Для фото: хорошая камера (количество мегапикселей не главное, важнее матрица). Для всех: ёмкая батарея (от 4000 мАч) и быстрая зарядка."),
-        FaqItem1("Какие обновления скачивать?", "Все официальные обновления системы и приложений из Play Маркет – безопасны. Не скачивайте обновления из подозрительных источников."),
-        FaqItem1("Как пользоваться ChatGPT?", "Установите приложение ChatGPT из Play Маркет или зайдите на сайт chat.openai.com. Зарегистрируйтесь и задавайте вопросы."),
-        FaqItem1("Где найти нейросети в России?", "Midjourney – через бота в Telegram. ChatGPT – через VPN или аналоги (YandexGPT, Kandinsky). Nananana – поищите в интернете."),
-        FaqItem1("Как писать промты?", "Описывайте задачу подробно: роль, контекст, формат, тон. Пример: «Ты – опытный преподаватель. Объясни, как очистить кэш телефона, простыми словами»."),
-        FaqItem1("Какие настройки можно менять?", "Яркость, звук, уведомления, обои – безопасно. Не меняйте настройки разработчика, если не знаете, что делаете.")
-    )
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("FAQ") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = accentColor, titleContentColor = Color.White)
-            )
-        },
-        containerColor = Color(0xFFC4D7DB)
-    ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(paddingValues).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(faqItems) { item ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f)),
-                    elevation = CardDefaults.cardElevation(2.dp)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(item.question, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = accentColor)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(item.answer, fontSize = 14.sp, color = Color(0xFF616161))
-                    }
-                }
-            }
-        }
-    }
-}
-
 // ---------- ЭКРАН ИГР (исправлен) ----------
 @Composable
 fun MediumGamesScreen(navController: NavController, userId: Long, accentColor: Color) {
@@ -631,63 +590,6 @@ fun getGameIcon(gameKey: String): ImageVector {
         else -> Icons.Default.Games
     }
 }
-
-// ---------- НАГРАДЫ (ДОСТИЖЕНИЯ) ----------
-@Composable
-fun MediumRewardsScreen(accentColor: Color, userId: Long) {
-    val context = LocalContext.current
-    val prefs = context.getSharedPreferences("progress_medium_$userId", Context.MODE_PRIVATE)
-    val achievements = listOf(
-        Achievement("Первые шаги", "Пройдите первый урок", "🏆", { prefs.getBoolean("game_notifications_completed", false) }),
-        Achievement("Игроман", "Сыграйте в 3 игры", "🎮", { false }),
-        Achievement("Мастер настроек", "Пройдите все уроки", "⚙️", {
-            listOf("game_notifications", "game_memory", "game_battery", "game_safeapps", "game_datatransfer", "game_recovery").all {
-                prefs.getBoolean("${it}_completed", false)
-            }
-        })
-    )
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("Достижения", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C2F3F))
-        Spacer(modifier = Modifier.height(16.dp))
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            modifier = Modifier.fillMaxSize(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(achievements) { achievement ->
-                val isUnlocked = achievement.isUnlocked()
-                Card(
-                    modifier = Modifier.fillMaxWidth().height(140.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = if (isUnlocked) Color(0xFFFFD700) else Color.White.copy(alpha = 0.7f)),
-                    elevation = CardDefaults.cardElevation(4.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(12.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(achievement.icon, fontSize = 48.sp)
-                        Text(achievement.title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = if (isUnlocked) Color.Black else Color.Gray)
-                        Text(achievement.description, fontSize = 12.sp, color = if (isUnlocked) Color.DarkGray else Color.Gray, textAlign = TextAlign.Center)
-                        if (!isUnlocked) {
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text("🔒 Не разблокировано", fontSize = 10.sp, color = Color( 0xFF9B0C3F))
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
 // ---------- ПРОФИЛЬ ----------
 @Composable
 fun MediumProfileScreen(userId: Long, accentColor: Color) {
@@ -787,26 +689,86 @@ fun StatisticCard(label: String, value: String, accentColor: Color) {
         }
     }
 }
-
-// ---------- СЕМЕЙНЫЙ ТАРИФ ----------
+// ---------- ЭКРАН FAQ ----------
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MediumFamilyPlanScreen(userId: Long, accentColor: Color) {
-    val navController = rememberNavController()
+fun MediumFaqScreen(navController: NavController, accentColor: Color) {
+
+    data class FaqItem1(val question: String, val answer: String)
+    val faqItems = listOf(
+        FaqItem1("Как выбрать смартфон?", "Для игр: мощный процессор и ОЗУ ≥6 ГБ. Для фото: хорошая камера (количество мегапикселей не главное, важнее матрица). Для всех: ёмкая батарея (от 4000 мАч) и быстрая зарядка."),
+        FaqItem1("Какие обновления скачивать?", "Все официальные обновления системы и приложений из Play Маркет – безопасны. Не скачивайте обновления из подозрительных источников."),
+        FaqItem1("Как пользоваться ChatGPT?", "Установите приложение ChatGPT из Play Маркет или зайдите на сайт chat.openai.com. Зарегистрируйтесь и задавайте вопросы."),
+        FaqItem1("Где найти нейросети в России?", "Midjourney – через бота в Telegram. ChatGPT – через VPN или аналоги (YandexGPT, Kandinsky). Nananana – поищите в интернете."),
+        FaqItem1("Как писать промты?", "Описывайте задачу подробно: роль, контекст, формат, тон. Пример: «Ты – опытный преподаватель. Объясни, как очистить кэш телефона, простыми словами»."),
+        FaqItem1("Какие настройки можно менять?", "Яркость, звук, уведомления, обои – безопасно. Не меняйте настройки разработчика, если не знаете, что делаете.")
+    )
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Семейный тариф") },
+                title = { Text("FAQ") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = accentColor,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = accentColor, titleContentColor = Color.White)
+            )
+        },
+        containerColor = Color(0xFFC4D7DB)
+    ) { paddingValues ->
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(paddingValues).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(faqItems) { item ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f)),
+                    elevation = CardDefaults.cardElevation(2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(item.question, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = accentColor)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(item.answer, fontSize = 14.sp, color = Color(0xFF616161))
+                    }
+                }
+            }
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = { navController.navigate("ai_chat") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = accentColor),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Default.Android, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Задать вопрос AI-помощнику", color = Color.White)
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
+    }
+}
+// ---------- СЕМЕЙНЫЙ ТАРИФ ----------
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MediumFamilyPlanScreen(navController: NavController, accentColor: Color, userId: Long) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val db = AppDatabase.getInstance(context)
+    val userRepo = UserRepository(db.userDao())
+    var isSubscribing by remember { mutableStateOf(false) }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Семейный тариф") },
+                navigationIcon = { IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад") } },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = accentColor, titleContentColor = Color.White, navigationIconContentColor = Color.White)
             )
         },
         containerColor = Color(0xFFC4D7DB)
@@ -819,10 +781,7 @@ fun MediumFamilyPlanScreen(userId: Long, accentColor: Color) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(32.dp))
-            Box(
-                modifier = Modifier.size(100.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.9f)),
-                contentAlignment = Alignment.Center
-            ) {
+            Box(modifier = Modifier.size(100.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.9f)), contentAlignment = Alignment.Center) {
                 Icon(Icons.Default.Group, contentDescription = null, modifier = Modifier.size(60.dp), tint = accentColor)
             }
             Text("Учитесь всей семьёй", fontSize = 24.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, color = Color(0xFF1C2F3F))
@@ -833,22 +792,35 @@ fun MediumFamilyPlanScreen(userId: Long, accentColor: Color) {
             MediumFamilyPlanFeature("🎥 Видеоуроки без рекламы", accentColor)
             MediumFamilyPlanFeature("💰 Скидка 30%", accentColor)
             Spacer(modifier = Modifier.weight(1f))
-            Button(
-                onClick = { /* Покупка подписки */ },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = accentColor),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Text("Подключить за 299 ₽/мес", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            if (isSubscribing) {
+                CircularProgressIndicator()
+            } else {
+                Button(
+                    onClick = {
+                        isSubscribing = true
+                        scope.launch {
+                            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                            val expiryDate = dateFormat.format(Date(System.currentTimeMillis() + 365L * 24 * 60 * 60 * 1000))
+                            userRepo.activateFamilySubscription(userId, expiryDate)
+                            navController.previousBackStackEntry?.savedStateHandle?.set("subscription_activated", true)
+                            isSubscribing = false
+                            navController.popBackStack()
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = accentColor),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text("Подключить за 299 ₽/мес", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
             }
         }
     }
 }
-
 @Composable
 fun MediumFamilyPlanFeature(text: String, color: Color) {
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(text = "•", fontSize = 20.sp, modifier = Modifier.width(24.dp), color = color)
-        Text(text = text, fontSize = 16.sp, color = Color(0xFF1C2F3F))
+        Text(text = text, fontSize = 16.sp, color = Color(0xFFFFF2BA))
     }
 }

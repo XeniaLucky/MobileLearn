@@ -32,4 +32,13 @@ class UserRepository(private val userDao: UserDao) {
         val updatedUser = user.copy(avatarPath = avatarPath)
         userDao.updateUser(updatedUser)
     }
+    suspend fun activateFamilySubscription(userId: Long, expiryDate: String) {
+        val user = getUser(userId) ?: return
+        val updatedUser = user.copy(
+            isPremium = true,
+            familySubscriptionActive = true,
+            familySubscriptionExpiry = expiryDate
+        )
+        userDao.updateUser(updatedUser)
+    }
 }

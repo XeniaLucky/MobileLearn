@@ -55,12 +55,22 @@ fun SmartphoneLearningApp() {
     val db = AppDatabase.getInstance(context)
     val userRepo = UserRepository(db.userDao())
 
+    // Инициализация менеджера достижений
+    LaunchedEffect(Unit) {
+        AchievementManager.init(context)
+    }
+
     // Функция выхода
     fun logout() {
         prefs.edit().remove("userId").apply()
         userId = -1L
         isLoggedIn = false
         selectedLevel = null
+    }
+
+    // Функция смены уровня
+    fun changeLevel(newLevel: String) {
+        selectedLevel = newLevel
     }
 
     // Загрузка уровня пользователя из БД
@@ -70,7 +80,6 @@ fun SmartphoneLearningApp() {
             val user = withContext(Dispatchers.IO) {
                 userRepo.getUser(userId)
             }
-            // Если уровень не задан (0 или null), оставляем selectedLevel = null, чтобы показать выбор
             selectedLevel = when (user?.levelId) {
                 1 -> "beginner"
                 2 -> "intermediate"
@@ -80,6 +89,30 @@ fun SmartphoneLearningApp() {
             isLoadingLevel = false
         } else {
             isLoadingLevel = false
+        }
+    }
+
+    // Обновление серии (streak) при каждом входе
+    LaunchedEffect(userId) {
+        if (userId != -1L) {
+            val lastLogin = prefs.getLong("last_login_$userId", 0)
+            val today = System.currentTimeMillis()
+            val yesterday = today - 24 * 60 * 60 * 1000
+            var streak = prefs.getInt("streak_days_$userId", 0)
+            if (lastLogin == 0L) {
+                streak = 1
+            } else if (lastLogin >= yesterday) {
+                streak++
+            } else {
+                streak = 1
+            }
+            prefs.edit()
+                .putLong("last_login_$userId", today)
+                .putInt("streak_days_$userId", streak)
+                .apply()
+            // Сохраняем в prefs среднего уровня (для достижений)
+            val mediumPrefs = context.getSharedPreferences("progress_medium_$userId", Context.MODE_PRIVATE)
+            mediumPrefs.edit().putInt("streak_days", streak).apply()
         }
     }
 
@@ -101,12 +134,11 @@ fun SmartphoneLearningApp() {
         return
     }
 
-    // Если уровень ещё не выбран (первый вход или levelId = 0)
+    // Если уровень ещё не выбран
     if (selectedLevel == null && !isLoadingLevel) {
         UserLevelSelectionScreen(
             onLevelSelected = { level ->
                 selectedLevel = level
-                // Сохраняем уровень в БД
                 scope.launch {
                     val userIdLocal = userId
                     if (userIdLocal != -1L) {
@@ -140,14 +172,27 @@ fun SmartphoneLearningApp() {
     }
 
     when (selectedLevel) {
-        "beginner" -> LightScreen(userId = userId, onLogout = { logout() })
-        "intermediate" -> MediumScreen(userId = userId, onLogout = { logout() })
-        "expert" -> ExpertScreen(userId = userId, onLogout = { logout() })
+        "beginner" -> LightScreen(
+            userId = userId,
+            onLogout = { logout() },
+            onLevelChange = { newLevel -> changeLevel(newLevel) }
+        )
+        "intermediate" -> MediumScreen(
+            userId = userId,
+            onLogout = { logout() },
+            onLevelChange = { newLevel -> changeLevel(newLevel) }
+        )
+        "expert" -> ExpertScreen(
+            userId = userId,
+            onLogout = { logout() },
+            onLevelChange = { newLevel -> changeLevel(newLevel) }
+        )
         else -> {
             selectedLevel = null
         }
     }
 }
+
 
 // ---------- ОНБОРДИНГ ----------
 @Composable

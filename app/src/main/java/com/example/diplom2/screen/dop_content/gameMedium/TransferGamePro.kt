@@ -43,6 +43,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+import com.example.diplom2.screen.AchievementManager
 
 data class TransferTask(
     val id: Int,
@@ -120,7 +121,7 @@ val receiversList = listOf(
     Receiver("Умная колонка", Icons.Default.Speaker, listOf("Bluetooth", "Wi-Fi Direct"))
 )
 
-// ----- ViewModel (без изменений) -----
+// ----- ViewModel -----
 class TransferViewModel(context: Context) : ViewModel() {
     private val prefs = context.getSharedPreferences("transfer_game", Context.MODE_PRIVATE)
 
@@ -205,7 +206,7 @@ class TransferViewModelFactory(private val context: Context) : ViewModelProvider
 // ----- UI -----
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GameTransferScreen(navController: NavController) {
+fun GameTransferScreen(navController: NavController, userId: Long) {
     val context = LocalContext.current
     val viewModel: TransferViewModel = viewModel(factory = TransferViewModelFactory(context))
     val currentTaskIndex by viewModel.currentTaskIndex.collectAsState()
@@ -214,7 +215,6 @@ fun GameTransferScreen(navController: NavController) {
     val showCertificate by viewModel.showCertificate.collectAsState()
     val lastMessage by viewModel.lastMessage.collectAsState()
     val introShown by viewModel.introShown.collectAsState()
-
     val currentTask = if (currentTaskIndex < tasks.size) tasks[currentTaskIndex] else null
     val isGameFinished = completedTasks >= tasks.size || showCertificate
 
@@ -264,13 +264,17 @@ fun GameTransferScreen(navController: NavController) {
                 .background(Brush.verticalGradient(listOf(Color(0xFF1E1A2F), Color(0xFF12101F))))
         ) {
             if (isGameFinished) {
-                CertificateScreen(onRestart = { viewModel.resetGame(); navController.popBackStack() })
+                CertificateScreen(
+                    onRestart = { viewModel.resetGame(); navController.popBackStack() },
+                    userId = userId,
+                    context = context
+                )
             } else if (currentTask != null) {
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // --- Верхняя панель (современная, компактная) ---
+                    // --- Верхняя панель ---
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -316,7 +320,7 @@ fun GameTransferScreen(navController: NavController) {
                         }
                     }
 
-                    // --- Единая карточка: ЗАДАНИЕ + ПОДСКАЗКА ---
+                    // --- Карточка задания и подсказки ---
                     val borderBrush = Brush.horizontalGradient(
                         colors = listOf(Color(0xFF9C27B0), Color(0xFFE040FB))
                     )
@@ -369,12 +373,11 @@ fun GameTransferScreen(navController: NavController) {
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White,
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                    textAlign = TextAlign.Center,
                                     lineHeight = 26.sp
                                 )
                             }
 
-                            // Разделитель
                             Divider(
                                 color = Color(0xFF9C27B0).copy(alpha = 0.3f),
                                 modifier = Modifier.padding(horizontal = 16.dp)
@@ -399,7 +402,7 @@ fun GameTransferScreen(navController: NavController) {
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Игровое поле: телефон + приёмники
+                    // Игровое поле
                     Row(
                         modifier = Modifier.fillMaxWidth().weight(1f),
                         horizontalArrangement = Arrangement.SpaceEvenly,
@@ -550,7 +553,6 @@ fun GameTransferScreen(navController: NavController) {
                 Column {
                     Text("Для устройства «${selectedReceiver!!.name}» подходят:", fontSize = 14.sp, color = Color(0xFFB0BEC5))
                     Spacer(modifier = Modifier.height(8.dp))
-                    // Подсказка о прокрутке
                     Text(
                         text = "⬇️ Листайте вниз, чтобы увидеть все способы ⬇️",
                         fontSize = 12.sp,
@@ -559,7 +561,6 @@ fun GameTransferScreen(navController: NavController) {
                         textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(4.dp))
-                    // Список с прокруткой
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -628,7 +629,6 @@ fun GameTransferScreen(navController: NavController) {
                                 }
                             }
                         }
-                        // Небольшая тень внизу для привлечения внимания к прокрутке (опционально)
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -837,7 +837,17 @@ fun TransferAnimation(onAnimationEnd: () -> Unit) {
 }
 
 @Composable
-fun CertificateScreen(onRestart: () -> Unit) {
+fun CertificateScreen(onRestart: () -> Unit, userId: Long, context: Context) {
+    LaunchedEffect(Unit) {
+        val prefs = context.getSharedPreferences("game_medium_$userId", Context.MODE_PRIVATE)
+        prefs.edit().putBoolean("transfer_game_completed", true).apply()
+        AchievementManager.init(context)
+        val achievements = AchievementManager.getAllAchievements()
+        val transferAchievement = achievements.find { it.id == "transfer_pro" }
+        transferAchievement?.let {
+            AchievementManager.checkAndUnlock(context, userId, it)
+        }
+    }
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Card(
             modifier = Modifier.padding(32.dp),

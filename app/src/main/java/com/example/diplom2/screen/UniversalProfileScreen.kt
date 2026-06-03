@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Observer
 import androidx.navigation.NavController
 import bd.AppDatabase
 import coil.compose.rememberAsyncImagePainter
@@ -40,6 +41,8 @@ import kotlinx.coroutines.withContext
 import repository.UserRepository
 import java.io.File
 import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.*
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,7 +52,9 @@ fun UniversalProfileScreen(
     userId: Long,
     levelPrefix: String,
     accentColor: Color,
+    backgroundColor: Color,
     onLogout: () -> Unit,
+    onLevelChange: (String) -> Unit,
     userName: String = "",
     userEmail: String = ""
 ) {
@@ -60,21 +65,35 @@ fun UniversalProfileScreen(
 
     var user by remember { mutableStateOf<table.User?>(null) }
     var isLoading by remember { mutableStateOf(true) }
-
-    LaunchedEffect(userId) {
-        isLoading = true
-        val loadedUser = withContext(Dispatchers.IO) {
-            userRepo.getUser(userId)
-        }
-        user = loadedUser
-        isLoading = false
-    }
-
     var showEditDialog by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
+    var showLevelChangeDialog by remember { mutableStateOf(false) }
+    var showSubscriptionDialog by remember { mutableStateOf(false) }
     var editName by remember { mutableStateOf("") }
     var editEmail by remember { mutableStateOf("") }
+    val backStackEntry = navController.currentBackStackEntry
+    val savedStateHandle = backStackEntry?.savedStateHandle
 
+    // Подписка на обновление подписки из экрана семейного тарифа
+    DisposableEffect(savedStateHandle) {
+        val observer = Observer<Boolean> { activated ->
+            if (activated) {
+                scope.launch {
+                    val updatedUser = withContext(Dispatchers.IO) {
+                        userRepo.getUser(userId)
+                    }
+                    user = updatedUser
+                    savedStateHandle?.set("subscription_activated", false)
+                }
+            }
+        }
+        savedStateHandle?.getLiveData<Boolean>("subscription_activated")?.observeForever(observer)
+        onDispose {
+            savedStateHandle?.getLiveData<Boolean>("subscription_activated")?.removeObserver(observer)
+        }
+    }
+
+    // Лаунчер для выбора изображения
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -94,13 +113,14 @@ fun UniversalProfileScreen(
         }
     }
 
+    // Лаунчер для запроса разрешений (Android 13+)
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
             imagePickerLauncher.launch("image/*")
         } else {
-            Toast.makeText(context, "Нужно разрешение на чтение файлов", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Без разрешения нельзя выбрать фото", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -150,6 +170,20 @@ fun UniversalProfileScreen(
     val achievementsCount = prefs.getInt("achievements", 0)
     val streakDays = prefs.getInt("streak_days", 0)
 
+    LaunchedEffect(userId) {
+        AchievementManager.init(context)
+        isLoading = true
+        val loadedUser = withContext(Dispatchers.IO) {
+            userRepo.getUser(userId)
+        }
+        user = loadedUser
+        isLoading = false
+        val familyAchievement = AchievementManager.getAllAchievements().find { it.id == "family_subscriber" }
+        familyAchievement?.let {
+            AchievementManager.checkAndUnlock(context, userId, it)
+        }
+    }
+
     if (isLoading || user == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
@@ -161,138 +195,256 @@ fun UniversalProfileScreen(
     val displayName = currentUser.name
     val displayEmail = currentUser.email
     val avatarUri = currentUser.avatarPath?.let { Uri.parse(it) }
-
     val levelDisplay = levelPrefix.replace("_", "").replaceFirstChar { it.uppercase() }
+    val isSubscriptionActive = currentUser.familySubscriptionActive
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFEFE3D3))
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(backgroundColor)
     ) {
-        // Аватар
-        Box(modifier = Modifier.size(100.dp).clickable { pickImage() }) {
-            if (avatarUri != null) {
-                Image(
-                    painter = rememberAsyncImagePainter(avatarUri),
-                    contentDescription = "Аватар",
-                    modifier = Modifier.size(100.dp).clip(CircleShape),
-                    contentScale = ContentScale.Crop
-                )
-            } else {
-                Image(
-                    painter = painterResource(id = R.drawable.avatarka_light),
-                    contentDescription = "Аватар",
-                    modifier = Modifier.size(100.dp).clip(CircleShape),
-                    contentScale = ContentScale.Crop
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .size(28.dp)
-                    .background(Color(0xFF8B5A2B), CircleShape)
-                    .padding(4.dp)
-            ) {
-                Icon(
-                    Icons.Default.Edit,
-                    contentDescription = "Сменить аватар",
-                    modifier = Modifier.fillMaxSize(),
-                    tint = Color.White
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(displayName, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color(0xFF212121))
-        Text(
-            "Уровень $levelDisplay",
-            fontSize = 16.sp,
-            color = accentColor,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Статистика
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f)),
-            elevation = CardDefaults.cardElevation(4.dp)
+        // Основной контент
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("Статистика", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF212121))
-                Spacer(modifier = Modifier.height(12.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    StatItem("Пройдено уроков", "$lessonsCompleted/$totalLessons", accentColor)
-                    StatItem("Сыграно игр", "$gamesPlayed", accentColor)
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    StatItem("Достижений", "$achievementsCount", accentColor)
-                    StatItem("Дней подряд", "$streakDays 🔥", accentColor)
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Семейный тариф
-        Card(
-            modifier = Modifier.fillMaxWidth().clickable { navController.navigate("family_plan") },
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f)),
-            elevation = CardDefaults.cardElevation(4.dp)
-        ) {
+            // Кнопка смены уровня (🔁) в правом верхнем углу
             Row(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.family),
-                    contentDescription = "Семейный тариф",
-                    modifier = Modifier.size(48.dp),
-                    contentScale = ContentScale.Fit
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-                Column {
-                    Text("Семейный тариф", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF212121))
-                    Text("До 5 человек, скидка 30% →", fontSize = 14.sp, color = Color(0xFF616161))
+                OutlinedButton(
+                    onClick = { showLevelChangeDialog = true },
+                    modifier = Modifier.size(48.dp, 48.dp),
+                    shape = CircleShape,
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = accentColor)
+                ) {
+                    Text("⁘", fontSize = 24.sp ,color=Color.White)
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        // Кнопка редактирования
-        OutlinedButton(
-            onClick = {
-                editName = displayName
-                editEmail = displayEmail
-                showEditDialog = true
-            },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = accentColor)
-        ) {
-            Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Редактировать профиль", fontSize = 16.sp)
-        }
+            // Аватар с короной (если подписка активна)
+            Box(modifier = Modifier.size(100.dp).clickable { pickImage() }) {
+                if (avatarUri != null) {
+                    Image(
+                        painter = rememberAsyncImagePainter(avatarUri),
+                        contentDescription = "Аватар",
+                        modifier = Modifier.size(100.dp).clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Image(
+                        painter = painterResource(id = R.drawable.avatarka_light),
+                        contentDescription = "Аватар",
+                        modifier = Modifier.size(100.dp).clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+                // Корона (если подписка активна)
+                if (isSubscriptionActive) {
+                    Image(
+                        painter = painterResource(id = R.drawable.crown_light),
+                        contentDescription = "Premium",
+                        modifier = Modifier
+                            .size(95.dp)
+                            .align(Alignment.TopCenter)
+                            .offset(y = (-55).dp, x=(3).dp),
+                        contentScale = ContentScale.Fit
+                    )
+                }
+                // Иконка редактирования
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .size(28.dp)
+                        .background(accentColor, CircleShape)
+                        .padding(4.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = "Сменить аватар",
+                        modifier = Modifier.fillMaxSize(),
+                        tint = Color.White
+                    )
+                }
+            }
 
-        Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(displayName, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color(0xFF212121))
+            Text(
+                "Уровень $levelDisplay",
+                fontSize = 16.sp,
+                color = accentColor,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(24.dp))
 
-        // Кнопка выхода
-        OutlinedButton(
-            onClick = { showLogoutDialog = true },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFD32F2F))
-        ) {
-            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Выйти из аккаунта", fontSize = 16.sp, color = Color(0xFFD32F2F))
+            // Статистика
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f)),
+                elevation = CardDefaults.cardElevation(4.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Статистика", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF212121))
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        StatItem("Пройдено уроков", "$lessonsCompleted/$totalLessons", accentColor)
+                        StatItem("Сыграно игр", "$gamesPlayed", accentColor)
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        StatItem("Достижений", "$achievementsCount", accentColor)
+                        StatItem("Дней подряд", "$streakDays 🔥", accentColor)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            if (isSubscriptionActive) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFD2BDB6)),
+                    elevation = CardDefaults.cardElevation(4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFFFFDE77), modifier = Modifier.size(32.dp))
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text("Семейный тариф активен", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFD8641))
+                    }
+                }
+            } else {
+                Card(
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        navController.navigate("family_plan")
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f)),
+                    elevation = CardDefaults.cardElevation(4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.family),
+                            contentDescription = "Семейный тариф",
+                            modifier = Modifier.size(48.dp),
+                            contentScale = ContentScale.Fit
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column {
+                            Text("Семейный тариф", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF212121))
+                            Text("До 5 человек, скидка 30% →", fontSize = 14.sp, color = Color(0xFF616161))
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Кнопка редактирования
+            OutlinedButton(
+                onClick = {
+                    editName = displayName
+                    editEmail = displayEmail
+                    showEditDialog = true
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = accentColor)
+            ) {
+                Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Редактировать профиль", fontSize = 16.sp)
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Кнопка выхода
+            OutlinedButton(
+                onClick = { showLogoutDialog = true },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFD32F2F))
+            ) {
+                Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Выйти из аккаунта", fontSize = 16.sp, color = Color(0xFFD32F2F))
+            }
         }
     }
+
+    // Диалог смены уровня
+    if (showLevelChangeDialog) {
+        var selectedNewLevel by remember { mutableStateOf<String?>(null) }
+        AlertDialog(
+            onDismissRequest = { showLevelChangeDialog = false },
+            title = { Text("Выберите новый уровень") },
+            text = {
+                Column {
+                    LevelOptionRadio(
+                        title = "Полный ноль",
+                        isSelected = selectedNewLevel == "beginner",
+                        onClick = { selectedNewLevel = "beginner" }
+                    )
+                    LevelOptionRadio(
+                        title = "Уверенный",
+                        isSelected = selectedNewLevel == "intermediate",
+                        onClick = { selectedNewLevel = "intermediate" }
+                    )
+                    LevelOptionRadio(
+                        title = "Мастер",
+                        isSelected = selectedNewLevel == "expert",
+                        onClick = { selectedNewLevel = "expert" }
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (selectedNewLevel != null) {
+                            scope.launch {
+                                val newLevelId = when (selectedNewLevel) {
+                                    "beginner" -> 1
+                                    "intermediate" -> 2
+                                    "expert" -> 3
+                                    else -> 1
+                                }
+                                withContext(Dispatchers.IO) {
+                                    val current = userRepo.getUser(userId)
+                                    current?.let {
+                                        val updated = it.copy(levelId = newLevelId)
+                                        userRepo.updateUser(updated)
+                                    }
+                                }
+                                showLevelChangeDialog = false
+                                onLevelChange(selectedNewLevel!!)
+                                Toast.makeText(context, "Уровень изменён! Приложение переключится.", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    },
+                    enabled = selectedNewLevel != null
+                ) {
+                    Text("Сохранить")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLevelChangeDialog = false }) {
+                    Text("Отмена")
+                }
+            }
+        )
+    }
+
 
     // Диалог редактирования
     if (showEditDialog) {
@@ -364,6 +516,18 @@ fun UniversalProfileScreen(
                 }
             }
         )
+    }
+}
+
+@Composable
+private fun LevelOptionRadio(title: String, isSelected: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        RadioButton(selected = isSelected, onClick = onClick)
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(title, fontSize = 16.sp)
     }
 }
 

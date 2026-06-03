@@ -15,5 +15,7 @@ interface UserPurchaseDao {
     @Query("SELECT * FROM user_purchases WHERE userId = :userId AND purchaseType = 'family_subscription' AND expiryDate >= date('now')")
     suspend fun getActiveFamilySubscription(userId: Long): UserPurchase?
 
+    @Query("SELECT * FROM user_purchases WHERE userId = :userId")
+    suspend fun getUserPurchases(userId: Long): List<UserPurchase>
 }
 

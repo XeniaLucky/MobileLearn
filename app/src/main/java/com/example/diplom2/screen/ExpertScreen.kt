@@ -40,6 +40,13 @@ import androidx.navigation.compose.rememberNavController
 import com.example.diplom2.R
 import com.example.diplom2.screen.dop_content.lessons_expert.*
 import GameExpert.*
+import bd.AppDatabase
+import kotlinx.coroutines.launch
+import repository.UserRepository
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import com.example.diplom2.screen.AiChatScreen
 
 // ── Функции для активного урока (Expert) ──
 // ── Дополнительные функции для сохранения/восстановления шага ──
@@ -88,7 +95,7 @@ fun getActiveProgressExpert(context: Context, userId: Long): Float {
 }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ExpertScreen(userId: Long, onLogout: () -> Unit) {
+fun ExpertScreen(userId: Long, onLogout: () -> Unit, onLevelChange: (String) -> Unit) {
     val navController = rememberNavController()
     val backgroundColor = Color(0xFF09020A)
     val accentColor = Color(0xFFD4AF37)
@@ -139,19 +146,27 @@ fun ExpertScreen(userId: Long, onLogout: () -> Unit) {
                     ExpertGamesScreen(navController = navController, accentColor = accentColor)
                 }
                 composable("rewards") {
-                    ExpertRewardsScreen(accentColor)
+                    UnifiedRewardsScreen(accentColor, userId)
+                }
+                composable("faq") {
+                    ExpertFaqScreen(navController, accentColor)
+                }
+                composable("ai_chat") {
+                    AiChatScreen(navController = navController, accentColor = accentColor)
                 }
                 composable("profile") {
                     UniversalProfileScreen(
                         navController = navController,
                         userId = userId,
                         levelPrefix = "expert_",
-                        accentColor = accentColor,
-                        onLogout = onLogout
+                        accentColor = Color( 0xFFD4AF37),
+                        backgroundColor = Color(0xFF09020A),
+                        onLogout = onLogout,
+                        onLevelChange = onLevelChange
                     )
                 }
                 composable("family_plan") {
-                    ExpertFamilyPlanScreen(navController = navController, accentColor = accentColor)
+                    ExpertFamilyPlanScreen(navController, backgroundColor, userId)
                 }
                 // Игры
                 composable("game_adb_commando") { AdbCommandoGame(navController) }
@@ -593,16 +608,70 @@ data class GameExpertModel(
     val isPurchased: Boolean,
     val icon: ImageVector
 )
+// ---------- ЭКРАН FAQ ----------
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ExpertRewardsScreen(accentColor: Color) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text("Эксклюзивные награды для Мастеров", fontSize = 18.sp, color = accentColor)
+fun ExpertFaqScreen(navController: NavController, accentColor: Color) {
+
+    data class FaqItem1(val question: String, val answer: String)
+    val faqItems = listOf(
+        FaqItem1("Как выбрать смартфон?", "Для игр: мощный процессор и ОЗУ ≥6 ГБ. Для фото: хорошая камера (количество мегапикселей не главное, важнее матрица). Для всех: ёмкая батарея (от 4000 мАч) и быстрая зарядка."),
+        FaqItem1("Какие обновления скачивать?", "Все официальные обновления системы и приложений из Play Маркет – безопасны. Не скачивайте обновления из подозрительных источников."),
+        FaqItem1("Как пользоваться ChatGPT?", "Установите приложение ChatGPT из Play Маркет или зайдите на сайт chat.openai.com. Зарегистрируйтесь и задавайте вопросы."),
+        FaqItem1("Где найти нейросети в России?", "Midjourney – через бота в Telegram. ChatGPT – через VPN или аналоги (YandexGPT, Kandinsky). Nananana – поищите в интернете."),
+        FaqItem1("Как писать промты?", "Описывайте задачу подробно: роль, контекст, формат, тон. Пример: «Ты – опытный преподаватель. Объясни, как очистить кэш телефона, простыми словами»."),
+        FaqItem1("Какие настройки можно менять?", "Яркость, звук, уведомления, обои – безопасно. Не меняйте настройки разработчика, если не знаете, что делаете.")
+    )
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("FAQ") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = accentColor, titleContentColor = Color.White)
+            )
+        },
+        containerColor = Color(0xFFC4D7DB)
+    ) { paddingValues ->
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(paddingValues).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(faqItems) { item ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f)),
+                    elevation = CardDefaults.cardElevation(2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(item.question, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = accentColor)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(item.answer, fontSize = 14.sp, color = Color(0xFF616161))
+                    }
+                }
+            }
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = { navController.navigate("ai_chat") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = accentColor),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Default.Android, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Задать вопрос AI-помощнику", color = Color.White)
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
     }
 }
-
 @Composable
 fun ExpertProfileScreen(navController: NavController, accentColor: Color) {
     Column(
@@ -638,23 +707,24 @@ fun ExpertProfileScreen(navController: NavController, accentColor: Color) {
         }
     }
 }
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ExpertFamilyPlanScreen(navController: NavController, accentColor: Color) {
+fun ExpertFamilyPlanScreen(navController: NavController, accentColor: Color, userId: Long) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val db = AppDatabase.getInstance(context)
+    val userRepo = UserRepository(db.userDao())
+    var isSubscribing by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Семейный тариф") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад", tint = Color.White)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = accentColor, titleContentColor = Color.Black, navigationIconContentColor = Color.Black)
+                navigationIcon = { IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад") } },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = accentColor, titleContentColor = Color.White, navigationIconContentColor = Color.White)
             )
         },
-        containerColor = Color(0xFF09020A)
+        containerColor = Color(0xFF180C21)
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -664,27 +734,43 @@ fun ExpertFamilyPlanScreen(navController: NavController, accentColor: Color) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(32.dp))
-            Box(
-                modifier = Modifier.size(100.dp).clip(CircleShape).background(Color(0xFF1A1A2E)),
-                contentAlignment = Alignment.Center
-            ) {
+            Box(modifier = Modifier.size(100.dp).clip(CircleShape).background((Color(0xFF1A1A2E)).copy(alpha = 0.9f)), contentAlignment = Alignment.Center) {
                 Icon(Icons.Default.Group, contentDescription = null, modifier = Modifier.size(60.dp), tint = accentColor)
             }
-            Text("Учитесь всей семьёй", fontSize = 24.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, color = Color.White)
-            Text("До 5 аккаунтов, общий прогресс, скидка 30%", fontSize = 16.sp, color = Color.White.copy(0.7f), textAlign = TextAlign.Center)
+            Text("Учитесь всей семьёй", fontSize = 24.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, color = Color(
+                0xFFEACAA6
+            )
+            )
+            Text("До 5 аккаунтов, общий прогресс, скидка 30%", fontSize = 16.sp, color = Color(
+                0xFFDAC299
+            ).copy(0.7f), textAlign = TextAlign.Center)
             Spacer(modifier = Modifier.height(32.dp))
-            ExpertFamilyPlanFeature("👨‍👩‍👧‍👦 До 5 участников", accentColor)
-            ExpertFamilyPlanFeature("📊 Общий прогресс", accentColor)
-            ExpertFamilyPlanFeature("🎥 Видеоуроки без рекламы", accentColor)
-            ExpertFamilyPlanFeature("💰 Скидка 30%", accentColor)
+            ExpertFamilyPlanFeature("👨‍👩‍👧‍👦 До 5 участников", color = Color( 0xFFDAC299))
+            ExpertFamilyPlanFeature("📊 Общий прогресс", color = Color( 0xFFDAC299))
+            ExpertFamilyPlanFeature("🎥 Видеоуроки без рекламы", color = Color( 0xFFDAC299))
+            ExpertFamilyPlanFeature("💰 Скидка 30%", color = Color( 0xFFDAC299))
             Spacer(modifier = Modifier.weight(1f))
-            Button(
-                onClick = { /* оплата */ },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = accentColor),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Text("Подключить за 499 ₽/мес", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+            if (isSubscribing) {
+                CircularProgressIndicator()
+            } else {
+                Button(
+                    onClick = {
+                        isSubscribing = true
+                        scope.launch {
+                            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                            val expiryDate = dateFormat.format(Date(System.currentTimeMillis() + 365L * 24 * 60 * 60 * 1000))
+                            userRepo.activateFamilySubscription(userId, expiryDate)
+                            navController.previousBackStackEntry?.savedStateHandle?.set("subscription_activated", true)
+                            isSubscribing = false
+                            navController.popBackStack()
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color( 0xFFDAC598)),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text("Подключить за 299 ₽/мес", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
             }
         }
     }
@@ -700,7 +786,7 @@ fun ExpertFamilyPlanFeature(text: String, color: Color) {
 
 @Composable
 fun ExpertGameDetailScreen(gameId: String, navController: NavController, accentColor: Color) {
-    Box(modifier = Modifier.fillMaxSize().background(Color(0xFF09020A)), contentAlignment = Alignment.Center) {
+    Box(modifier = Modifier.fillMaxSize().background(Color(0xFF9F6F45)), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text("Игра: $gameId", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
             Spacer(modifier = Modifier.height(16.dp))
