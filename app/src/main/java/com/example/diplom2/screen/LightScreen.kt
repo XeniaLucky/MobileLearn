@@ -10,8 +10,10 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Message
@@ -21,8 +23,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -44,32 +49,6 @@ import java.util.Locale
 import com.example.diplom2.screen.AiChatScreen
 
 @Composable
-fun TutorialOverlay(
-    steps: List<String>,
-    onFinish: () -> Unit
-) {
-    var currentStep by remember { mutableStateOf(0) }
-    Box(
-        modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.7f)),
-        contentAlignment = Alignment.Center
-    ) {
-        Card(modifier = Modifier.padding(24.dp)) {
-            Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(text = steps[currentStep], fontSize = 20.sp)
-                Spacer(modifier = Modifier.height(20.dp))
-                Button(onClick = {
-                    if (currentStep < steps.lastIndex) currentStep++
-                    else onFinish()
-                }) {
-                    Text("Далее")
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
 fun LightScreen(userId: Long, onLogout: () -> Unit, onLevelChange: (String) -> Unit) {
     val context = LocalContext.current
     val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
@@ -77,26 +56,29 @@ fun LightScreen(userId: Long, onLogout: () -> Unit, onLevelChange: (String) -> U
     val backgroundColor = Color(0xFFEFE3D3)
     var showTutorial by remember { mutableStateOf(!prefs.getBoolean("light_tutorial_done", false)) }
 
-    if (showTutorial) {
-        TutorialOverlay(
-            steps = listOf(
-                "Это раздел «Уроки» – здесь ты учишься пользоваться телефоном.",
-                "В «Справочнике» находятся ответы на частые вопросы.",
-                "В «Профиле» ты можешь изменить свои данные или сменить уровень."
-            ),
-            onFinish = {
-                showTutorial = false
-                context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-                    .edit().putBoolean("light_tutorial_done", true).apply()
-            }
-        )
-    }
+    // Состояния туториала
+    var tutorialActive by remember { mutableStateOf(false) }
+    var currentTutorialStep by remember { mutableIntStateOf(0) }
+    val elementBounds = remember { mutableStateMapOf<String, Rect>() }
+
+    // Шаги туториала для главного экрана
+    val lightTutorialSteps = listOf(
+        TutorialStep("lesson_card_0", "Уроки", "Нажимайте на карточку, чтобы начать обучение.", Icons.Default.School),
+        TutorialStep("lesson_card_1", "Игровые уроки", "Интерактивные уроки с практикой.", Icons.Default.Games),
+        TutorialStep("guide_tab", "Справочник", "Ответы на частые вопросы.", Icons.Default.Help),
+        TutorialStep("profile_tab", "Профиль", "Ваши данные, статистика и настройки.", Icons.Default.Person)
+    )
 
     Scaffold(
         bottomBar = {
             NavigationBar(
                 containerColor = Color(0xFFEFE3D3).copy(alpha = 0.95f),
-                tonalElevation = 0.dp
+                tonalElevation = 0.dp,
+                modifier = Modifier.onGloballyPositioned { coords ->
+                    // Захватываем координаты нижних вкладок
+                    elementBounds["guide_tab"] = coords.boundsInWindow()
+                    elementBounds["profile_tab"] = coords.boundsInWindow()
+                }
             ) {
                 NavigationBarItem(
                     icon = { Image(painter = painterResource(id = R.drawable.home_light), contentDescription = "Главная", modifier = Modifier.size(24.dp)) },
@@ -122,11 +104,23 @@ fun LightScreen(userId: Long, onLogout: () -> Unit, onLevelChange: (String) -> U
     ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues)) {
             NavHost(navController = navController, startDestination = "lessons") {
-                composable("lessons") { LessonsScreen(navController = navController, backgroundColor = backgroundColor) }
-                composable("guide") { GuideScreen(navController = navController, backgroundColor = backgroundColor) }
-                composable("ai_chat") {
-                    AiChatScreen(navController = navController, accentColor = Color(0xFFD5C29B))
+                composable("lessons") {
+                    LessonsScreen(
+                        navController = navController,
+                        backgroundColor = backgroundColor,
+                        tutorialActive = tutorialActive,
+                        currentTutorialStep = currentTutorialStep,
+                        elementBounds = elementBounds,
+                        onTutorialStart = { tutorialActive = true },
+                        onTutorialNext = { currentTutorialStep++ },
+                        onTutorialFinish = {
+                            tutorialActive = false
+                            prefs.edit().putBoolean("light_tutorial_done", true).apply()
+                        }
+                    )
                 }
+                composable("guide") { GuideScreen(navController = navController, backgroundColor = backgroundColor) }
+                composable("ai_chat") { AiChatScreen(navController = navController, accentColor = Color(0xFFD5C29B)) }
                 composable("profile") {
                     UniversalProfileScreen(
                         navController = navController,
@@ -155,10 +149,18 @@ fun LightScreen(userId: Long, onLogout: () -> Unit, onLevelChange: (String) -> U
     }
 }
 
-// ---------- ГЛАВНЫЙ ЭКРАН СО СПИСКОМ УРОКОВ ----------
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LessonsScreen(navController: NavController, backgroundColor: Color) {
+fun LessonsScreen(
+    navController: NavController,
+    backgroundColor: Color,
+    tutorialActive: Boolean,
+    currentTutorialStep: Int,
+    elementBounds: MutableMap<String, Rect>,
+    onTutorialStart: () -> Unit,
+    onTutorialNext: () -> Unit,
+    onTutorialFinish: () -> Unit
+) {
     val gameLessons = listOf(
         Triple("Включение телефона", Icons.Default.PowerSettingsNew, "game_power"),
         Triple("Ответ на звонок", Icons.Default.Phone, "game_call"),
@@ -169,6 +171,15 @@ fun LessonsScreen(navController: NavController, backgroundColor: Color) {
         Triple("Интернет и Wi-Fi", Icons.Default.Wifi, "game_wifi"),
         Triple("Приложения", Icons.Default.Apps, "game_apps")
     )
+
+    val lightTutorialSteps = listOf(
+        TutorialStep("lesson_card_0", "Уроки", "Нажимайте на карточку, чтобы начать обучение.", Icons.Default.School),
+        TutorialStep("lesson_card_1", "Игровые уроки", "Интерактивные уроки с практикой.", Icons.Default.Games),
+        TutorialStep("guide_tab", "Справочник", "Ответы на частые вопросы.", Icons.Default.Help),
+        TutorialStep("profile_tab", "Профиль", "Ваши данные, статистика и настройки.", Icons.Default.Person)
+    )
+
+    var showIntroDialog by remember { mutableStateOf(true) }
 
     Scaffold(
         topBar = {
@@ -185,9 +196,17 @@ fun LessonsScreen(navController: NavController, backgroundColor: Color) {
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(gameLessons) { (title, icon, route) ->
+            items(gameLessons.size) { index ->
+                val (title, icon, route) = gameLessons[index]
                 Card(
-                    modifier = Modifier.fillMaxWidth().clickable { navController.navigate(route) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { navController.navigate(route) }
+                        .onGloballyPositioned { coords ->
+                            if (index < 2) {
+                                elementBounds["lesson_card_$index"] = coords.boundsInWindow()
+                            }
+                        },
                     shape = RoundedCornerShape(20.dp),
                     elevation = CardDefaults.cardElevation(4.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFC4D7DB).copy(alpha = 0.9f))
@@ -202,6 +221,56 @@ fun LessonsScreen(navController: NavController, backgroundColor: Color) {
                 }
             }
         }
+    }
+
+    // Интро-диалог
+    if (showIntroDialog) {
+        AlertDialog(
+            onDismissRequest = { },
+            containerColor = Color(0xFF1E1A2F),
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.School, contentDescription = null, tint = Color(0xFF9C27B0), modifier = Modifier.size(28.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text("Добро пожаловать в начальный уровень!", fontWeight = FontWeight.Bold, color = Color(0xFFE1BEE7), fontSize = 20.sp)
+                }
+            },
+            text = {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    Text("Сейчас вы познакомитесь с интерфейсом. Следуйте подсказкам.", color = Color.White, fontSize = 16.sp)
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showIntroDialog = false
+                        onTutorialStart()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF9C27B0)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Понятно, начать!", color = Color.White)
+                }
+            },
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // Оверлей туториала
+    if (tutorialActive && currentTutorialStep < lightTutorialSteps.size) {
+        TutorialOverlay(
+            steps = lightTutorialSteps,
+            currentStep = currentTutorialStep,
+            elementBounds = elementBounds,
+            onNext = {
+                if (currentTutorialStep + 1 < lightTutorialSteps.size) {
+                    onTutorialNext()
+                } else {
+                    onTutorialFinish()
+                }
+            },
+            onSkip = onTutorialFinish
+        )
     }
 }
 

@@ -23,9 +23,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -48,8 +51,6 @@ import java.util.Date
 import java.util.Locale
 import com.example.diplom2.screen.AiChatScreen
 
-// ── Функции для активного урока (Expert) ──
-// ── Дополнительные функции для сохранения/восстановления шага ──
 fun saveLastStepExpert(context: Context, userId: Long, lessonKey: String, step: Int) {
     val p = context.getSharedPreferences("progress_expert_$userId", Context.MODE_PRIVATE)
     p.edit().putInt("last_step_$lessonKey", step).apply()
@@ -60,7 +61,6 @@ fun getLastStepExpert(context: Context, userId: Long, lessonKey: String): Int {
     return p.getInt("last_step_$lessonKey", 0)
 }
 
-// Заменяет setActiveLessonExpert – активирует урок, не сбрасывая прогресс/шаг, если урок уже активен
 fun activateLessonExpert(context: Context, userId: Long, lessonKey: String) {
     val p = context.getSharedPreferences("progress_expert_$userId", Context.MODE_PRIVATE)
     val currentActive = p.getString("active_lesson_key", null)
@@ -68,11 +68,11 @@ fun activateLessonExpert(context: Context, userId: Long, lessonKey: String) {
         p.edit()
             .putString("active_lesson_key", lessonKey)
             .putFloat("active_lesson_progress", 0f)
-            .putInt("last_step_$lessonKey", 0)    // начинаем заново только если урок сменился
+            .putInt("last_step_$lessonKey", 0)
             .apply()
     }
-    // Если урок тот же – ничего не меняем (оставляем прогресс и шаг)
 }
+
 fun setActiveLessonExpert(context: Context, userId: Long, lessonKey: String) {
     val p = context.getSharedPreferences("progress_expert_$userId", Context.MODE_PRIVATE)
     p.edit().putString("active_lesson_key", lessonKey).apply()
@@ -93,6 +93,7 @@ fun getActiveProgressExpert(context: Context, userId: Long): Float {
     val p = context.getSharedPreferences("progress_expert_$userId", Context.MODE_PRIVATE)
     return p.getFloat("active_lesson_progress", 0f)
 }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExpertScreen(userId: Long, onLogout: () -> Unit, onLevelChange: (String) -> Unit) {
@@ -100,11 +101,31 @@ fun ExpertScreen(userId: Long, onLogout: () -> Unit, onLevelChange: (String) -> 
     val backgroundColor = Color(0xFF09020A)
     val accentColor = Color(0xFFD4AF37)
 
+    // Туториал
+    val tutorialPrefs = LocalContext.current.getSharedPreferences("expert_tutorial", Context.MODE_PRIVATE)
+    var showIntroDialog by remember { mutableStateOf(!tutorialPrefs.getBoolean("shown", false)) }
+    var tutorialActive by remember { mutableStateOf(false) }
+    var currentTutorialStep by remember { mutableIntStateOf(0) }
+    val elementBounds = remember { mutableStateMapOf<String, Rect>() }
+
+    val expertTutorialSteps = listOf(
+        TutorialStep("active_course_card", "Активный курс", "Продолжайте обучение с того места, где остановились.", Icons.Default.PlayArrow),
+        TutorialStep("module_0", "Модули", "Уроки экспертного уровня. Нажимайте на карточку, чтобы начать.", Icons.Default.MenuBook),
+        TutorialStep("module_1", "Модули (продолжение)", "Изучайте ADB, рутирование, кастомные прошивки и другие темы.", Icons.Default.Smartphone),
+        TutorialStep("extra_lessons_button", "Ещё уроки", "Дополнительные уроки по отладке, файловой системе, сети и эмуляции.", Icons.Default.Add),
+        TutorialStep("games_tab", "Игры", "Тренировки для экспертов.", Icons.Default.Games),
+        TutorialStep("profile_tab", "Профиль", "Ваши данные, статистика и смена уровня.", Icons.Default.Person)
+    )
+
     Scaffold(
         bottomBar = {
             NavigationBar(
                 containerColor = Color(0xFF1A1A2E),
-                tonalElevation = 0.dp
+                tonalElevation = 0.dp,
+                modifier = Modifier.onGloballyPositioned { coords ->
+                    elementBounds["games_tab"] = coords.boundsInWindow()
+                    elementBounds["profile_tab"] = coords.boundsInWindow()
+                }
             ) {
                 NavigationBarItem(
                     icon = { Icon(Icons.Default.School, contentDescription = "Курсы") },
@@ -140,7 +161,25 @@ fun ExpertScreen(userId: Long, onLogout: () -> Unit, onLevelChange: (String) -> 
                 startDestination = "home"
             ) {
                 composable("home") {
-                    ExpertHomeScreen(navController = navController, accentColor = accentColor, userId = userId)
+                    ExpertHomeScreen(
+                        navController = navController,
+                        accentColor = accentColor,
+                        userId = userId,
+                        tutorialActive = tutorialActive,
+                        currentTutorialStep = currentTutorialStep,
+                        elementBounds = elementBounds,
+                        onTutorialStart = { tutorialActive = true },
+                        onTutorialNext = { currentTutorialStep++ },
+                        onTutorialFinish = {
+                            tutorialActive = false
+                            tutorialPrefs.edit().putBoolean("shown", true).apply()
+                        },
+                        showIntroDialog = showIntroDialog,
+                        onIntroConfirm = {
+                            showIntroDialog = false
+                            tutorialActive = true
+                        }
+                    )
                 }
                 composable("games") {
                     ExpertGamesScreen(navController = navController, accentColor = accentColor)
@@ -159,8 +198,8 @@ fun ExpertScreen(userId: Long, onLogout: () -> Unit, onLevelChange: (String) -> 
                         navController = navController,
                         userId = userId,
                         levelPrefix = "expert_",
-                        accentColor = Color( 0xFFD4AF37),
-                        backgroundColor = Color(0xFF09020A),
+                        accentColor = accentColor,
+                        backgroundColor = backgroundColor,
                         onLogout = onLogout,
                         onLevelChange = onLevelChange
                     )
@@ -193,8 +232,21 @@ fun ExpertScreen(userId: Long, onLogout: () -> Unit, onLevelChange: (String) -> 
         }
     }
 }
+
 @Composable
-fun ExpertHomeScreen(navController: NavController, accentColor: Color, userId: Long) {
+fun ExpertHomeScreen(
+    navController: NavController,
+    accentColor: Color,
+    userId: Long,
+    tutorialActive: Boolean,
+    currentTutorialStep: Int,
+    elementBounds: MutableMap<String, Rect>,
+    onTutorialStart: () -> Unit,
+    onTutorialNext: () -> Unit,
+    onTutorialFinish: () -> Unit,
+    showIntroDialog: Boolean,
+    onIntroConfirm: () -> Unit
+) {
     val context = LocalContext.current
     val prefs = context.getSharedPreferences("progress_expert_$userId", Context.MODE_PRIVATE)
 
@@ -207,15 +259,22 @@ fun ExpertHomeScreen(navController: NavController, accentColor: Color, userId: L
         ExpertLessonItem("Безопасность", Icons.Default.Security, "lesson_security", "lesson_security")
     )
 
-    // Используем expert‑функции
     val activeLessonKey = getActiveLessonExpert(context, userId)
     val activeProgress = getActiveProgressExpert(context, userId)
     val activeLessonTitle = mainLessons.find { it.route == activeLessonKey }?.title ?: ""
 
-    // Общий прогресс (fallback)
     val totalProgress = mainLessons.count { l ->
         prefs.getBoolean("${l.progressKey}_completed", false)
     }.toFloat() / mainLessons.size
+
+    val expertTutorialSteps = listOf(
+        TutorialStep("active_course_card", "Активный курс", "Продолжайте обучение с того места, где остановились.", Icons.Default.PlayArrow),
+        TutorialStep("module_0", "Модули", "Уроки экспертного уровня. Нажимайте на карточку, чтобы начать.", Icons.Default.MenuBook),
+        TutorialStep("module_1", "Модули (продолжение)", "Изучайте ADB, рутирование, кастомные прошивки и другие темы.", Icons.Default.Smartphone),
+        TutorialStep("extra_lessons_button", "Ещё уроки", "Дополнительные уроки по отладке, файловой системе, сети и эмуляции.", Icons.Default.Add),
+        TutorialStep("games_tab", "Игры", "Тренировки для экспертов.", Icons.Default.Games),
+        TutorialStep("profile_tab", "Профиль", "Ваши данные, статистика и смена уровня.", Icons.Default.Person)
+    )
 
     Column(
         modifier = Modifier
@@ -227,67 +286,53 @@ fun ExpertHomeScreen(navController: NavController, accentColor: Color, userId: L
         Text("Твоя серия: 🔥15 дней", fontSize = 16.sp, color = Color.White.copy(0.7f), modifier = Modifier.padding(bottom = 24.dp))
 
         Card(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .onGloballyPositioned { coords ->
+                    elementBounds["active_course_card"] = coords.boundsInWindow()
+                },
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A2E))
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Продвинутый курс", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                Text(
-                    text = if (activeLessonKey != null) activeLessonTitle else "ADB, рутирование, кастомизация",
-                    fontSize = 14.sp,
-                    color = Color.White.copy(0.7f)
-                )
+                Text(if (activeLessonKey != null) activeLessonTitle else "ADB, рутирование, кастомизация", fontSize = 14.sp, color = Color.White.copy(0.7f))
                 Spacer(modifier = Modifier.height(8.dp))
-                LinearProgressIndicator(
-                    progress = if (activeLessonKey != null) activeProgress else totalProgress,
-                    modifier = Modifier.fillMaxWidth(),
-                    color = accentColor,
-                    trackColor = Color.White.copy(0.2f)
-                )
-                Text(
-                    "Прогресс ${(if (activeLessonKey != null) activeProgress * 100 else totalProgress * 100).toInt()}%",
-                    fontSize = 12.sp,
-                    color = Color.White.copy(0.7f)
-                )
+                LinearProgressIndicator(progress = if (activeLessonKey != null) activeProgress else totalProgress, modifier = Modifier.fillMaxWidth(), color = accentColor, trackColor = Color.White.copy(0.2f))
+                Text("Прогресс ${(if (activeLessonKey != null) activeProgress * 100 else totalProgress * 100).toInt()}%", fontSize = 12.sp, color = Color.White.copy(0.7f))
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
                     onClick = {
-                        val target = activeLessonKey
-                            ?: mainLessons.firstOrNull {
-                                !prefs.getBoolean("${it.progressKey}_completed", false)
-                            }?.route
-                            ?: mainLessons.first().route
-                        if (activeLessonKey == null) {
-                            setActiveLessonExpert(context, userId, target)  // <-- expert-функция
-                        }
+                        val target = activeLessonKey ?: mainLessons.firstOrNull { !prefs.getBoolean("${it.progressKey}_completed", false) }?.route ?: mainLessons.first().route
+                        if (activeLessonKey == null) setActiveLessonExpert(context, userId, target)
                         navController.navigate(target)
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = accentColor),
                     shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("Продолжить обучение", color = Color.White)
-                }
+                ) { Text("Продолжить обучение", color = Color.White) }
             }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
         Text("Модули", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
 
-        // Обычная сетка (без LazyVerticalGrid, чтобы избежать конфликтов со скроллом)
         val chunkedLessons = mainLessons.chunked(2)
         Column {
-            chunkedLessons.forEach { rowItems ->
+            chunkedLessons.forEachIndexed { rowIndex, rowItems ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    rowItems.forEach { lesson ->
+                    rowItems.forEachIndexed { colIndex, lesson ->
+                        val globalIndex = rowIndex * 2 + colIndex
                         Card(
                             modifier = Modifier
                                 .weight(1f)
                                 .height(160.dp)
-                                .clickable { navController.navigate(lesson.route) },
+                                .clickable { navController.navigate(lesson.route) }
+                                .onGloballyPositioned { coords ->
+                                    if (globalIndex < 2) elementBounds["module_$globalIndex"] = coords.boundsInWindow()
+                                },
                             shape = RoundedCornerShape(12.dp),
                             colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A2E))
                         ) {
@@ -299,17 +344,11 @@ fun ExpertHomeScreen(navController: NavController, accentColor: Color, userId: L
                                 Icon(lesson.icon, contentDescription = null, modifier = Modifier.size(48.dp), tint = accentColor)
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(lesson.title, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.White, textAlign = TextAlign.Center)
-                                val isCompleted = prefs.getBoolean("${lesson.progressKey}_completed", false)
-                                if (isCompleted) {
-                                    Text("✅ Пройдено", fontSize = 10.sp, color = Color(0xFF2E8058))
-                                }
+                                if (prefs.getBoolean("${lesson.progressKey}_completed", false)) Text("✅ Пройдено", fontSize = 10.sp, color = Color(0xFF2E8058))
                             }
                         }
                     }
-                    // Если в строке не хватает карточки, добавляем Spacer
-                    if (rowItems.size < 2) {
-                        Spacer(modifier = Modifier.weight(1f))
-                    }
+                    if (rowItems.size < 2) Spacer(modifier = Modifier.weight(1f))
                 }
                 Spacer(modifier = Modifier.height(12.dp))
             }
@@ -318,14 +357,62 @@ fun ExpertHomeScreen(navController: NavController, accentColor: Color, userId: L
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = { navController.navigate("extra_lessons") },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .onGloballyPositioned { coords ->
+                    elementBounds["extra_lessons_button"] = coords.boundsInWindow()
+                },
             colors = ButtonDefaults.buttonColors(containerColor = accentColor)
         ) {
-            Text("Ещё уроки", color = Color.White)  // <-- белый текст, как у среднего
+            Text("Ещё уроки", color = Color.White)
         }
         Spacer(modifier = Modifier.height(16.dp))
     }
+
+    if (showIntroDialog) {
+        AlertDialog(
+            onDismissRequest = { },
+            containerColor = Color(0xFF1E1A2F),
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.School, contentDescription = null, tint = Color(0xFF9C27B0), modifier = Modifier.size(28.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text("Добро пожаловать в экспертный уровень!", fontWeight = FontWeight.Bold, color = Color(0xFFE1BEE7), fontSize = 20.sp)
+                }
+            },
+            text = {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    Text("Сейчас вы познакомитесь с интерфейсом. Следуйте подсказкам.", color = Color.White, fontSize = 16.sp)
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = onIntroConfirm,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF9C27B0)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Понятно, начать!", color = Color.White)
+                }
+            },
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    if (tutorialActive && currentTutorialStep < expertTutorialSteps.size) {
+        TutorialOverlay(
+            steps = expertTutorialSteps,
+            currentStep = currentTutorialStep,
+            elementBounds = elementBounds,
+            onNext = {
+                if (currentTutorialStep + 1 < expertTutorialSteps.size) onTutorialNext()
+                else onTutorialFinish()
+            },
+            onSkip = onTutorialFinish
+        )
+    }
 }
+
+// Остальные функции (ExpertGamesScreen, ExpertFaqScreen, ExpertFamilyPlanScreen и т.д.) остаются без изменений.
 // ---------- ЭКРАН "ЕЩЁ УРОКИ" ----------
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

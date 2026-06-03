@@ -22,9 +22,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -47,9 +50,11 @@ import com.example.diplom2.screen.dop_content.gameMedium.GameTransferScreen
 import com.example.diplom2.screen.dop_content.lessons_medium.*
 import repository.UserRepository
 import java.text.SimpleDateFormat
+import com.example.diplom2.screen.dop_content.gameMedium.GameCleaner.GameCleanerScreen
 import java.util.Date
 import java.util.Locale
 import com.example.diplom2.screen.AiChatScreen
+import com.example.diplom2.screen.dop_content.gameMedium.GameSettingsScreen
 
 // Активный урок (Medium)
 fun setActiveLessonMedium(context: Context, userId: Long, lessonKey: String) {
@@ -72,6 +77,7 @@ fun getActiveProgressMedium(context: Context, userId: Long): Float {
     val p = context.getSharedPreferences("progress_medium_$userId", Context.MODE_PRIVATE)
     return p.getFloat("active_lesson_progress", 0f)
 }
+
 fun saveLastStepMedium(context: Context, userId: Long, lessonKey: String, step: Int) {
     val p = context.getSharedPreferences("progress_medium_$userId", Context.MODE_PRIVATE)
     p.edit().putInt("last_step_$lessonKey", step).apply()
@@ -93,6 +99,7 @@ fun activateLessonMedium(context: Context, userId: Long, lessonKey: String) {
             .apply()
     }
 }
+
 // Вспомогательные классы
 data class MediumLessonItem(val title: String, val icon: ImageVector, val route: String, val progressKey: String)
 
@@ -174,9 +181,15 @@ fun MediumScreen(userId: Long, onLogout: () -> Unit, onLevelChange: (String) -> 
                     MediumFamilyPlanScreen(navController, backgroundColor, userId)
                 }
                 // Бесплатные игры
-                composable("game_transfer") { GameTransferScreen(navController = navController, userId = userId) }
-                composable("game_swipequiz") { SwipeQuizGame(navController = navController, onBack = { navController.popBackStack() }) }
-                composable("game_settingspuzzle") { SettingsPuzzleGame(navController = navController, onBack = { navController.popBackStack() }) }
+                composable("game_transfer") {
+                    GameTransferScreen(navController = navController, userId = userId)
+                }
+                composable("game_cleaner") {
+                    GameCleanerScreen(navController = navController)
+                }
+                composable("game_settings") {
+                    GameSettingsScreen(navController = navController, userId = userId)
+                }
                 // Платные игры
                 composable("premium_game_pro_photographer") { ProPhotographerGame(navController = navController, onBack = { navController.popBackStack() }) }
                 composable("premium_game_cyber_detective") { CyberDetectiveGame(navController = navController, onBack = { navController.popBackStack() }) }
@@ -197,8 +210,6 @@ fun MediumScreen(userId: Long, onLogout: () -> Unit, onLevelChange: (String) -> 
     }
 }
 
-// Остальные функции (MediumHomeScreen, MediumGamesScreen, MediumRewardsScreen, ExtraLessonsScreen, FaqScreen, MediumFamilyPlanScreen, MediumFamilyPlanFeature, getGameIcon, StatisticCard и т.д.) остаются без изменений.
-// Для краткости они не дублируются, но должны быть скопированы из предыдущей версии.
 // ---------- ГЛАВНЫЙ ЭКРАН (6 новых уроков) ----------
 @Composable
 fun MediumHomeScreen(userId: Long, accentColor: Color, navController: NavController) {
@@ -222,6 +233,22 @@ fun MediumHomeScreen(userId: Long, accentColor: Color, navController: NavControl
         prefs.getBoolean("${l.progressKey}_completed", false)
     }.toFloat() / mainLessons.size
 
+    // ==================== ТУТОРИАЛ ====================
+    val tutorialPrefs = context.getSharedPreferences("medium_tutorial", Context.MODE_PRIVATE)
+    var showIntroDialog by remember { mutableStateOf(!tutorialPrefs.getBoolean("shown", false)) }
+    var tutorialActive by remember { mutableStateOf(false) }
+    var currentTutorialStep by remember { mutableIntStateOf(0) }
+    val elementBounds = remember { mutableStateMapOf<String, Rect>() }
+
+    val mediumTutorialSteps = listOf(
+        TutorialStep("active_course_card", "Активный курс", "Продолжайте обучение с того места, где остановились.", Icons.Default.PlayArrow),
+        TutorialStep("modules_section", "Модули", "Все уроки среднего уровня. Нажимайте на карточку, чтобы пройти урок.", Icons.Default.MenuBook),
+        TutorialStep("extra_lessons_button", "Ещё уроки", "Дополнительные уроки по Wi-Fi и цифровому благополучию.", Icons.Default.Add),
+        TutorialStep("faq_button", "FAQ", "Часто задаваемые вопросы и ответы.", Icons.Default.Help),
+        TutorialStep("games_tab", "Игры", "Обучающие игры для закрепления материала.", Icons.Default.Games)
+    )
+    // =================================================
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -234,7 +261,11 @@ fun MediumHomeScreen(userId: Long, accentColor: Color, navController: NavControl
 
         // Карточка «Активный курс»
         Card(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .onGloballyPositioned { coords ->
+                    elementBounds["active_course_card"] = coords.boundsInWindow()
+                },
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f)),
             elevation = CardDefaults.cardElevation(4.dp)
@@ -284,52 +315,62 @@ fun MediumHomeScreen(userId: Long, accentColor: Color, navController: NavControl
 
         // Сетка уроков (без LazyVerticalGrid)
         val chunkedLessons = mainLessons.chunked(2)
-        Column {
-            chunkedLessons.forEach { rowItems ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    rowItems.forEach { lesson ->
-                        Card(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(160.dp)
-                                .clickable { navController.navigate(lesson.route) },
-                            shape = RoundedCornerShape(20.dp),
-                            elevation = CardDefaults.cardElevation(4.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f))
-                        ) {
-                            Column(
-                                modifier = Modifier.fillMaxSize().padding(16.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
+        Box(
+            modifier = Modifier.onGloballyPositioned { coords ->
+                elementBounds["modules_section"] = coords.boundsInWindow()
+            }
+        ) {
+            Column {
+                chunkedLessons.forEach { rowItems ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        rowItems.forEach { lesson ->
+                            Card(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(160.dp)
+                                    .clickable { navController.navigate(lesson.route) },
+                                shape = RoundedCornerShape(20.dp),
+                                elevation = CardDefaults.cardElevation(4.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f))
                             ) {
-                                Icon(lesson.icon, contentDescription = null, modifier = Modifier.size(48.dp), tint = accentColor)
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(lesson.title, fontSize = 16.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, color = Color(0xFF1C2F3F))
-                                val isCompleted = prefs.getBoolean("${lesson.progressKey}_completed", false)
-                                Text(
-                                    if (isCompleted) "✅ Пройдено" else "Интерактивный урок",
-                                    fontSize = 12.sp,
-                                    color = if (isCompleted) Color(0xFF2E8058) else Color(0xFF757575),
-                                    textAlign = TextAlign.Center
-                                )
+                                Column(
+                                    modifier = Modifier.fillMaxSize().padding(16.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(lesson.icon, contentDescription = null, modifier = Modifier.size(48.dp), tint = accentColor)
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(lesson.title, fontSize = 16.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, color = Color(0xFF1C2F3F))
+                                    val isCompleted = prefs.getBoolean("${lesson.progressKey}_completed", false)
+                                    Text(
+                                        if (isCompleted) "✅ Пройдено" else "Интерактивный урок",
+                                        fontSize = 12.sp,
+                                        color = if (isCompleted) Color(0xFF2E8058) else Color(0xFF757575),
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
                             }
                         }
+                        if (rowItems.size < 2) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
                     }
-                    if (rowItems.size < 2) {
-                        Spacer(modifier = Modifier.weight(1f))
-                    }
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
-                Spacer(modifier = Modifier.height(12.dp))
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = { navController.navigate("extra_lessons") },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .onGloballyPositioned { coords ->
+                    elementBounds["extra_lessons_button"] = coords.boundsInWindow()
+                },
             colors = ButtonDefaults.buttonColors(containerColor = accentColor)
         ) {
             Text("Ещё уроки", color = Color.White)
@@ -337,14 +378,73 @@ fun MediumHomeScreen(userId: Long, accentColor: Color, navController: NavControl
         Spacer(modifier = Modifier.height(8.dp))
         Button(
             onClick = { navController.navigate("faq") },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .onGloballyPositioned { coords ->
+                    elementBounds["faq_button"] = coords.boundsInWindow()
+                },
             colors = ButtonDefaults.buttonColors(containerColor = accentColor)
         ) {
             Text("FAQ", color = Color.White)
         }
         Spacer(modifier = Modifier.height(16.dp))
     }
+
+    // Интро-диалог
+    if (showIntroDialog) {
+        AlertDialog(
+            onDismissRequest = { },
+            containerColor = Color(0xFF1E1A2F),
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.School, contentDescription = null, tint = Color(0xFF9C27B0), modifier = Modifier.size(28.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text("Добро пожаловать в средний уровень!", fontWeight = FontWeight.Bold, color = Color(0xFFE1BEE7), fontSize = 20.sp)
+                }
+            },
+            text = {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    Text("Сейчас вы познакомитесь с интерфейсом. Следуйте подсказкам.", color = Color.White, fontSize = 16.sp)
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showIntroDialog = false
+                        tutorialActive = true
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF9C27B0)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Понятно, начать!", color = Color.White)
+                }
+            },
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // Оверлей туториала
+    if (tutorialActive && currentTutorialStep < mediumTutorialSteps.size) {
+        TutorialOverlay(
+            steps = mediumTutorialSteps,
+            currentStep = currentTutorialStep,
+            elementBounds = elementBounds,
+            onNext = {
+                if (currentTutorialStep + 1 < mediumTutorialSteps.size) {
+                    currentTutorialStep++
+                } else {
+                    tutorialActive = false
+                    tutorialPrefs.edit().putBoolean("shown", true).apply()
+                }
+            },
+            onSkip = {
+                tutorialActive = false
+                tutorialPrefs.edit().putBoolean("shown", true).apply()
+            }
+        )
+    }
 }
+
 @OptIn(ExperimentalMaterial3Api::class)
 // ---------- ЭКРАН "ЕЩЁ УРОКИ" ----------
 @Composable
@@ -400,6 +500,7 @@ fun ExtraLessonsScreen(navController: NavController, userId: Long, accentColor: 
 }
 
 // ---------- ЭКРАН ИГР (исправлен) ----------
+// ---------- ЭКРАН ИГР (исправлен, ошибки align устранены) ----------
 @Composable
 fun MediumGamesScreen(navController: NavController, userId: Long, accentColor: Color) {
     val context = LocalContext.current
@@ -414,20 +515,39 @@ fun MediumGamesScreen(navController: NavController, userId: Long, accentColor: C
         }
     }
 
-    val freeGames = games.filter { it.price == 0 }.toMutableList()
-    // Заменяем TapRun на TransferGamePro
-    val tapRunIndex = freeGames.indexOfFirst { it.gameKey == "tap_run" }
-    if (tapRunIndex != -1) {
-        val original = freeGames[tapRunIndex]
-        freeGames[tapRunIndex] = original.copy(
+    // Список бесплатных игр
+    val freeGames = listOf(
+        Game(
+            id = -1,
+            gameKey = "transfer_game",
             name = "Обменник PRO",
             description = "Перетаскивайте файлы на устройства и выбирайте правильный способ передачи",
-            gameKey = "transfer_game",
             price = 0,
+            levelRequiredId = 2,
             isPremium = false,
             iconResName = "transfer"
+        ),
+        Game(
+            id = -2,
+            gameKey = "game_cleaner",
+            name = "Очистка памяти PRO",
+            description = "Тяните файлы в правильные корзины, освобождайте место и получайте очки!",
+            price = 0,
+            levelRequiredId = 2,
+            isPremium = false,
+            iconResName = "cleaner"
+        ),
+        Game(
+            id = -3,
+            gameKey = "settings_game",
+            name = "Тайны настроек",
+            description = "Найдите правильный путь в меню телефона, чтобы выполнить задание",
+            price = 0,
+            levelRequiredId = 2,
+            isPremium = false,
+            iconResName = "settings"
         )
-    }
+    )
 
     val premiumGames = games.filter { it.price > 0 }
 
@@ -447,7 +567,7 @@ fun MediumGamesScreen(navController: NavController, userId: Long, accentColor: C
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 6.dp)
-                    .height(140.dp),
+                    .height(150.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f)),
                 elevation = CardDefaults.cardElevation(2.dp)
@@ -463,36 +583,52 @@ fun MediumGamesScreen(navController: NavController, userId: Long, accentColor: C
                         tint = accentColor
                     )
                     Spacer(modifier = Modifier.width(16.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            game.name,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1C2F3F),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            game.description,
-                            fontSize = 14.sp,
-                            color = Color(0xFF1C2F3F).copy(0.7f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text("Рекорд: 0 очков", fontSize = 12.sp, color = accentColor)
-                    }
-                    Button(
-                        onClick = {
-                            when (game.gameKey) {
-                                "transfer_game" -> navController.navigate("game_transfer")
-                                "swipe_quiz" -> navController.navigate("game_swipequiz")
-                                "settings_puzzle" -> navController.navigate("game_settingspuzzle")
-                                else -> {}
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = accentColor)
+
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Играть", color = Color.White)
+                        Column {
+                            Text(
+                                game.name,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF1C2F3F),
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                game.description,
+                                fontSize = 14.sp,
+                                color = Color(0xFF1C2F3F).copy(0.7f),
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                "Рекорд: 0 очков",
+                                fontSize = 12.sp,
+                                color = accentColor
+                            )
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            Button(
+                                onClick = {
+                                    when (game.gameKey) {
+                                        "transfer_game" -> navController.navigate("game_transfer")
+                                        "game_cleaner" -> navController.navigate("game_cleaner")
+                                        "settings_game" -> navController.navigate("game_settings")
+                                        else -> {}
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = accentColor)
+                            ) {
+                                Text("Играть", color = Color.White)
+                            }
+                        }
                     }
                 }
             }
@@ -512,7 +648,7 @@ fun MediumGamesScreen(navController: NavController, userId: Long, accentColor: C
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 6.dp)
-                    .height(140.dp),
+                    .height(150.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f)),
                 elevation = CardDefaults.cardElevation(2.dp)
@@ -528,48 +664,60 @@ fun MediumGamesScreen(navController: NavController, userId: Long, accentColor: C
                         tint = accentColor
                     )
                     Spacer(modifier = Modifier.width(16.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            game.name,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1C2F3F),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            game.description,
-                            fontSize = 14.sp,
-                            color = Color(0xFF1C2F3F).copy(0.7f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                    if (isPurchased) {
-                        Button(
-                            onClick = {
-                                when (game.gameKey) {
-                                    "pro_photographer" -> navController.navigate("premium_game_pro_photographer")
-                                    "cyber_detective" -> navController.navigate("premium_game_cyber_detective")
-                                    "gestures" -> navController.navigate("premium_game_gestures")
-                                    else -> {}
-                                }
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = accentColor)
-                        ) {
-                            Text("Играть", color = Color.White)
+
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            Text(
+                                game.name,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF1C2F3F),
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                game.description,
+                                fontSize = 14.sp,
+                                color = Color(0xFF1C2F3F).copy(0.7f),
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
-                    } else {
-                        Button(
-                            onClick = {
-                                scope.launch {
-                                    gameRepo.purchaseGame(userId, game.id)
-                                    isPurchased = true
-                                }
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = accentColor)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
                         ) {
-                            Text("Купить за ${game.price} ₽", color = Color.White)
+                            if (isPurchased) {
+                                Button(
+                                    onClick = {
+                                        when (game.gameKey) {
+                                            "pro_photographer" -> navController.navigate("premium_game_pro_photographer")
+                                            "cyber_detective" -> navController.navigate("premium_game_cyber_detective")
+                                            "gestures" -> navController.navigate("premium_game_gestures")
+                                            else -> {}
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = accentColor)
+                                ) {
+                                    Text("Играть", color = Color.White)
+                                }
+                            } else {
+                                Button(
+                                    onClick = {
+                                        scope.launch {
+                                            gameRepo.purchaseGame(userId, game.id)
+                                            isPurchased = true
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = accentColor)
+                                ) {
+                                    Text("Купить за ${game.price} ₽", color = Color.White)
+                                }
+                            }
                         }
                     }
                 }
@@ -577,19 +725,19 @@ fun MediumGamesScreen(navController: NavController, userId: Long, accentColor: C
         }
     }
 }
-
 @Composable
 fun getGameIcon(gameKey: String): ImageVector {
     return when (gameKey) {
-        "transfer_game" -> Icons.Default.Sync
-        "swipe_quiz" -> Icons.Default.Swipe
-        "settings_puzzle" -> Icons.Default.Settings
+        "transfer_game" -> Icons.Default.CloudSync
+        "game_cleaner" -> Icons.Default.CleaningServices
+        "settings_game" -> Icons.Default.Settings
         "pro_photographer" -> Icons.Default.Camera
         "cyber_detective" -> Icons.Default.Security
         "gestures" -> Icons.Default.Gesture
         else -> Icons.Default.Games
     }
 }
+
 // ---------- ПРОФИЛЬ ----------
 @Composable
 fun MediumProfileScreen(userId: Long, accentColor: Color) {
@@ -689,11 +837,11 @@ fun StatisticCard(label: String, value: String, accentColor: Color) {
         }
     }
 }
+
 // ---------- ЭКРАН FAQ ----------
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MediumFaqScreen(navController: NavController, accentColor: Color) {
-
     data class FaqItem1(val question: String, val answer: String)
     val faqItems = listOf(
         FaqItem1("Как выбрать смартфон?", "Для игр: мощный процессор и ОЗУ ≥6 ГБ. Для фото: хорошая камера (количество мегапикселей не главное, важнее матрица). Для всех: ёмкая батарея (от 4000 мАч) и быстрая зарядка."),
@@ -753,6 +901,7 @@ fun MediumFaqScreen(navController: NavController, accentColor: Color) {
         }
     }
 }
+
 // ---------- СЕМЕЙНЫЙ ТАРИФ ----------
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -817,6 +966,7 @@ fun MediumFamilyPlanScreen(navController: NavController, accentColor: Color, use
         }
     }
 }
+
 @Composable
 fun MediumFamilyPlanFeature(text: String, color: Color) {
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {

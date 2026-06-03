@@ -78,6 +78,16 @@ object AchievementManager {
                 }
             ),
             Achievement(
+                id = "settings_expert",
+                title = "Мастер настроек",
+                description = "Пройдите игру 'Тайны настроек'",
+                icon = "⚙️",
+                condition = { ctx, userId ->
+                    val prefs = ctx.getSharedPreferences("game_medium_$userId", Context.MODE_PRIVATE)
+                    prefs.getBoolean("settings_game_completed", false)
+                }
+            ),
+            Achievement(
                 id = "lesson_master_medium",
                 title = "Продвинутый пользователь",
                 description = "Пройдите все 6 уроков среднего уровня",
